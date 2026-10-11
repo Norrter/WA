@@ -1,0 +1,45 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: workout-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: workout_db
+      POSTGRES_USER: workout_user
+      POSTGRES_PASSWORD: workout_password
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U workout_user -d workout_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Бэкенд в контейнере. По умолчанию НЕ запускается:
+  #   docker compose up -d                  -> только база
+  #   docker compose --profile full up -d   -> база + бэкенд на :8000
+  backend:
+    profiles: ["full"]
+    build: ./backend
+    container_name: workout-backend
+    restart: unless-stopped
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    environment:
+      DATABASE_URL: postgresql+asyncpg://workout_user:workout_password@postgres:5432/workout_db
+      SECRET_KEY: ${SECRET_KEY:-}
+
+    ports:
+      - "8000:8000"
+
+volumes:
+  postgres_data:
