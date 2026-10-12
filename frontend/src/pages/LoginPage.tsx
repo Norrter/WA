@@ -1,10 +1,13 @@
 import { useState, type FormEvent } from "react";
 
 import { useAuth } from "../components/Auth";
+import { useScene } from "../components/Scene";
 import { useToast } from "../components/Toast";
 import { Button, Field } from "../components/ui";
 
 export function LoginPage() {
+  useScene("struggle");
+
   const { login, register } = useAuth();
   const toast = useToast();
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -30,21 +33,22 @@ export function LoginPage() {
   };
 
   return (
-    <div className="auth">
-      <section className="auth-brand" aria-hidden="true">
-        <div className="auth-plates">
-          <span className="plate plate-red" />
-          <span className="plate plate-blue" />
-          <span className="plate plate-yellow" />
-          <span className="plate plate-green" />
-          <span className="plate plate-white" />
-        </div>
-        <p className="auth-title">Журнал тренировок</p>
-        <p className="auth-lead">Программа, расписание и каждый подход в одном месте.</p>
-      </section>
+    <main className="auth">
+      <header className="auth-head">
+        <p className="eyebrow">Журнал тренировок</p>
+        <h1 className="auth-title">
+          Greek's
+          <br />
+          Gym
+        </h1>
+        <p className="auth-lead">
+          Программа, расписание и каждый подход в одном месте. Тренируйтесь
+          как герои, записывайте как летописцы.
+        </p>
+      </header>
 
-      <section className="auth-panel">
-        <div className="segmented" role="tablist">
+      <section className="auth-form" aria-label={mode === "login" ? "Вход" : "Регистрация"}>
+        <div className="tabs" role="tablist">
           <button
             type="button"
             role="tab"
@@ -104,6 +108,6 @@ export function LoginPage() {
           </Button>
         </form>
       </section>
-    </div>
+    </main>
   );
 }

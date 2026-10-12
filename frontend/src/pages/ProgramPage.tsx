@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 
 import { programs as programsApi } from "../api";
 import type { Exercise, ProgramDay, ProgramDetail, ProgramExercise } from "../api/types";
+import { useScene } from "../components/Scene";
 import { ExercisePicker } from "../components/ExercisePicker";
 import { AutoPlanDialog } from "../components/ScheduleDialogs";
 import { useToast } from "../components/Toast";
@@ -17,7 +18,7 @@ import {
   useConfirm,
 } from "../components/ui";
 import { loadExercises } from "../lib/data";
-import { formatDuration, formatWeight, numberOrNull, orNull } from "../lib/format";
+import { formatDuration, formatReps, formatWeight, numberOrNull, orNull } from "../lib/format";
 import { navigate } from "../lib/router";
 import { useAsync } from "../lib/useAsync";
 
@@ -30,6 +31,8 @@ type Dialog =
   | { kind: "editExercise"; day: ProgramDay; item: ProgramExercise };
 
 export function ProgramPage({ id }: { id: number }) {
+  useScene("pillars");
+
   const toast = useToast();
   const [confirmDialog, confirm] = useConfirm();
   const [dialog, setDialog] = useState<Dialog | null>(null);
@@ -174,7 +177,7 @@ export function ProgramPage({ id }: { id: number }) {
                     </span>
                     <span className="day-exercise-plan">
                       <strong>
-                        {item.sets}×{item.target_reps ?? "—"}
+                        {item.sets}×{formatReps(item.target_reps, item.target_reps_max)}
                       </strong>
                       {item.target_weight !== null && ` · ${formatWeight(item.target_weight)}`}
                       {item.rest_seconds !== null && ` · отдых ${formatDuration(item.rest_seconds)}`}
@@ -419,6 +422,7 @@ function TextDialog({
 interface PlanValues {
   sets: number;
   target_reps: number | null;
+  target_reps_max: number | null;
   target_weight: number | null;
   rest_seconds: number | null;
   notes: string | null;
@@ -437,9 +441,14 @@ function PlanDialog({
   onSubmit: (values: PlanValues) => Promise<void>;
 }) {
   const [sets, setSets] = useState(String(item?.sets ?? 3));
-  const [reps, setReps] = useState(String(item?.target_reps ?? 10));
-  const [weight, setWeight] = useState(item?.target_weight != null ? String(item.target_weight) : "");
-  const [rest, setRest] = useState(String(item?.rest_seconds ?? 90));
+  // У нового упражнения подставляем типичные значения, у существующего — его план
+  const initial = (value: number | null | undefined, fallback: string) =>
+    item ? (value != null ? String(value) : "") : fallback;
+
+  const [reps, setReps] = useState(initial(item?.target_reps, "10"));
+  const [repsMax, setRepsMax] = useState(initial(item?.target_reps_max, ""));
+  const [weight, setWeight] = useState(initial(item?.target_weight, ""));
+  const [rest, setRest] = useState(initial(item?.rest_seconds, "90"));
   const [notes, setNotes] = useState(item?.notes ?? "");
   const [busy, setBusy] = useState(false);
 
@@ -453,6 +462,7 @@ function PlanDialog({
           await onSubmit({
             sets: Number(sets),
             target_reps: numberOrNull(reps),
+            target_reps_max: numberOrNull(repsMax),
             target_weight: numberOrNull(weight),
             rest_seconds: numberOrNull(rest),
             notes: orNull(notes),
@@ -460,12 +470,22 @@ function PlanDialog({
           setBusy(false);
         }}
       >
-        <div className="form-row">
+        <div className="form-row form-row-3">
           <Field label="Подходы">
             <input type="number" min={1} max={100} required value={sets} onChange={(e) => setSets(e.target.value)} autoFocus />
           </Field>
           <Field label="Повторы">
             <input type="number" min={1} max={1000} value={reps} onChange={(e) => setReps(e.target.value)} />
+          </Field>
+          <Field label="До" hint="Для диапазона 8–12">
+            <input
+              type="number"
+              min={reps === "" ? 1 : Number(reps)}
+              max={1000}
+              placeholder="—"
+              value={repsMax}
+              onChange={(e) => setRepsMax(e.target.value)}
+            />
           </Field>
         </div>
         <div className="form-row">

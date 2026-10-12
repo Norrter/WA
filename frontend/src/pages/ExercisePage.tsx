@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { exercises as exercisesApi } from "../api";
+import { useScene } from "../components/Scene";
 import { useUser } from "../components/Auth";
 import { ExerciseProgress } from "../components/ExerciseProgress";
 import { useToast } from "../components/Toast";
@@ -10,6 +11,8 @@ import { useAsync } from "../lib/useAsync";
 import { ExerciseDialog } from "./ExercisesPage";
 
 export function ExercisePage({ id }: { id: number }) {
+  useScene("struggle");
+
   const user = useUser();
   const toast = useToast();
   const [confirmDialog, confirm] = useConfirm();
@@ -41,8 +44,9 @@ export function ExercisePage({ id }: { id: number }) {
     <div className="page">
       <PageHeader
         back={{ href: "#/exercises", label: "Упражнения" }}
+        eyebrow={exercise.muscle_group ?? undefined}
         title={exercise.name}
-        subtitle={[exercise.muscle_group, exercise.equipment].filter(Boolean).join(", ") || undefined}
+        subtitle={exercise.equipment ?? undefined}
         actions={
           isMine && (
             <>

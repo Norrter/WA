@@ -17,6 +17,7 @@ class ProgramExerciseCreate(BaseModel):
     order_index: OrderIndex
     sets: SetsCount
     target_reps: Reps | None = None
+    target_reps_max: Reps | None = None
     target_weight: Weight | None = None
     rest_seconds: RestSeconds | None = None
     notes: Notes | None = None
@@ -27,6 +28,7 @@ class ProgramExerciseUpdate(BaseModel):
     order_index: OrderIndex
     sets: SetsCount
     target_reps: Reps | None = None
+    target_reps_max: Reps | None = None
     target_weight: Weight | None = None
     rest_seconds: RestSeconds | None = None
     notes: Notes | None = None
@@ -39,6 +41,7 @@ class ProgramExercisePatch(PatchModel):
     order_index: OrderIndex | None = None
     sets: SetsCount | None = None
     target_reps: Reps | None = None
+    target_reps_max: Reps | None = None
     target_weight: Weight | None = None
     rest_seconds: RestSeconds | None = None
     notes: Notes | None = None
@@ -61,6 +64,7 @@ class ProgramExerciseResponse(BaseModel):
     order_index: int
     sets: int
     target_reps: int | None
+    target_reps_max: int | None
     target_weight: float | None
     rest_seconds: int | None
     notes: str | None

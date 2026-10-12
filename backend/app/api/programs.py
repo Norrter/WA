@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -60,6 +60,99 @@ async def get_programs(
     )
 
     return result.scalars().all()
+
+
+@router.get(
+    "/templates",
+    response_model=list[ProgramDetailResponse],
+)
+async def get_program_templates(
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Готовые программы, общие для всех. Их нельзя менять,
+    но можно взять себе копию: POST /programs/{id}/copy."""
+    result = await session.execute(
+        select(Program)
+        .options(
+            selectinload(Program.days)
+            .selectinload(ProgramDay.exercises)
+            .selectinload(ProgramExercise.exercise)
+        )
+        .where(Program.user_id.is_(None))
+        .order_by(Program.id)
+    )
+
+    return result.scalars().all()
+
+
+@router.post(
+    "/{program_id}/copy",
+    response_model=ProgramResponse,
+    status_code=201,
+)
+async def copy_program(
+    program_id: int,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Создать свою копию шаблона (или своей программы)
+    со всеми днями и упражнениями."""
+    result = await session.execute(
+        select(Program)
+        .options(
+            selectinload(Program.days)
+            .selectinload(ProgramDay.exercises)
+        )
+        .where(
+            Program.id == program_id,
+            or_(
+                Program.user_id.is_(None),
+                Program.user_id == current_user.id,
+            ),
+        )
+    )
+
+    source = result.scalar_one_or_none()
+
+    if source is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Program not found",
+        )
+
+    copy = Program(
+        user_id=current_user.id,
+        name=source.name,
+        description=source.description,
+        days=[
+            ProgramDay(
+                name=day.name,
+                order_index=day.order_index,
+                exercises=[
+                    ProgramExercise(
+                        exercise_id=item.exercise_id,
+                        order_index=item.order_index,
+                        sets=item.sets,
+                        target_reps=item.target_reps,
+                        target_reps_max=item.target_reps_max,
+                        target_weight=item.target_weight,
+                        rest_seconds=item.rest_seconds,
+                        notes=item.notes,
+                    )
+                    for item in day.exercises
+                ],
+            )
+            for day in source.days
+        ],
+    )
+
+    session.add(copy)
+
+    await session.commit()
+    await session.refresh(copy)
+
+    return copy
 
 
 @router.get(

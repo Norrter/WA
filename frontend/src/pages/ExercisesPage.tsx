@@ -2,6 +2,7 @@ import { useMemo, useState, type FormEvent } from "react";
 
 import { exercises as exercisesApi } from "../api";
 import type { Exercise, ExerciseInput } from "../api/types";
+import { useScene } from "../components/Scene";
 import { useUser } from "../components/Auth";
 import { filterExercises, MuscleFilter } from "../components/ExercisePicker";
 import { Icon } from "../components/Icon";
@@ -16,6 +17,8 @@ import { useAsync } from "../lib/useAsync";
 export const EQUIPMENT = ["Штанга", "Гантели", "Гиря", "Блок", "Тренажёр", "Собственный вес"];
 
 export function ExercisesPage() {
+  useScene("struggle");
+
   const user = useUser();
   const { data, error, loading, reload } = useAsync(loadExercises, []);
   const [search, setSearch] = useState("");

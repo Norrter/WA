@@ -52,6 +52,9 @@ export const exercises = {
 
 export const programs = {
   list: () => request<Program[]>("GET", "/programs"),
+  // Готовые программы, общие для всех
+  templates: () => request<ProgramDetail[]>("GET", "/programs/templates"),
+  copy: (id: number) => request<Program>("POST", `/programs/${id}/copy`),
   get: (id: number) => request<ProgramDetail>("GET", `/programs/${id}`),
   create: (data: { name: string; description: string | null }) =>
     request<Program>("POST", "/programs", data),

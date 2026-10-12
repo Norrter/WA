@@ -70,6 +70,7 @@ class WorkoutExerciseDetail(BaseModel):
     order_index: int
     sets: int
     target_reps: int | None
+    target_reps_max: int | None
     target_weight: float | None
     rest_seconds: int | None
     notes: str | None

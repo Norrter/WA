@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import { exercises as exercisesApi, stats } from "../api";
 import type { ExerciseRecords } from "../api/types";
+import { useScene } from "../components/Scene";
 import { BarChart } from "../components/Charts";
 import { ExerciseProgress } from "../components/ExerciseProgress";
 import { Empty, ErrorNote, Loading, PageHeader } from "../components/ui";
@@ -45,6 +46,8 @@ async function loadRecords(): Promise<ExerciseRecordRow[]> {
 }
 
 export function ProgressPage() {
+  useScene("throne");
+
   const [weeks, setWeeks] = useState(12);
   const [exerciseId, setExerciseId] = useState<number | null>(null);
   const now = today();

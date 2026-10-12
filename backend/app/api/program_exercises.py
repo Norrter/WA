@@ -27,6 +27,19 @@ router = APIRouter(
 )
 
 
+def check_reps_range(program_exercise: ProgramExercise) -> None:
+    """Диапазон повторов: верхняя граница есть только вместе с нижней
+    и не меньше её."""
+    low = program_exercise.target_reps
+    high = program_exercise.target_reps_max
+
+    if high is not None and (low is None or high < low):
+        raise HTTPException(
+            status_code=422,
+            detail="target_reps_max must be greater than or equal to target_reps",
+        )
+
+
 async def load_program_exercises(
     day_id: int,
     session: AsyncSession,
@@ -107,10 +120,13 @@ async def create_program_exercise(
         order_index=data.order_index,
         sets=data.sets,
         target_reps=data.target_reps,
+        target_reps_max=data.target_reps_max,
         target_weight=data.target_weight,
         rest_seconds=data.rest_seconds,
         notes=data.notes,
     )
+
+    check_reps_range(program_exercise)
 
     session.add(program_exercise)
 
@@ -241,6 +257,7 @@ async def update_program_exercise_common(
         )
 
     apply_changes(program_exercise, data, partial=partial)
+    check_reps_range(program_exercise)
 
     await session.commit()
 

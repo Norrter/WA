@@ -270,11 +270,14 @@ export function Stepper({
 }
 
 export function PageHeader({
+  eyebrow,
   title,
   subtitle,
   actions,
   back,
 }: {
+  // Короткая подпись над заголовком: контекст экрана
+  eyebrow?: ReactNode;
   title: ReactNode;
   subtitle?: ReactNode;
   actions?: ReactNode;
@@ -290,6 +293,7 @@ export function PageHeader({
       )}
       <div className="page-header-row">
         <div>
+          {eyebrow && <p className="eyebrow">{eyebrow}</p>}
           <h1 className="page-title">{title}</h1>
           {subtitle && <p className="page-subtitle">{subtitle}</p>}
         </div>

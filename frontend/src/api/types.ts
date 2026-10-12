@@ -46,6 +46,8 @@ export interface ProgramExercise {
   order_index: number;
   sets: number;
   target_reps: number | null;
+  // верхняя граница диапазона: 8–12
+  target_reps_max: number | null;
   target_weight: number | null;
   rest_seconds: number | null;
   notes: string | null;
@@ -56,6 +58,8 @@ export interface ProgramExerciseInput {
   order_index: number;
   sets: number;
   target_reps: number | null;
+  // верхняя граница диапазона: 8–12
+  target_reps_max: number | null;
   target_weight: number | null;
   rest_seconds: number | null;
   notes: string | null;
@@ -103,6 +107,8 @@ export interface WorkoutExerciseDetail {
   order_index: number;
   sets: number;
   target_reps: number | null;
+  // верхняя граница диапазона: 8–12
+  target_reps_max: number | null;
   target_weight: number | null;
   rest_seconds: number | null;
   notes: string | null;

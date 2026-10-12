@@ -1,14 +1,25 @@
 import { stats, workouts } from "../api";
 import type { ProgramDetail, ScheduledWorkout } from "../api/types";
-import { Button, ErrorNote, Loading, StatusPill } from "../components/ui";
 import { useUser } from "../components/Auth";
-import { addDays, fromISO, relativeDay, startOfWeek, today, WEEKDAYS_SHORT } from "../lib/dates";
+import { SceneSection, useScene } from "../components/Scene";
+import { Button, ErrorNote, Loading, StatusPill } from "../components/ui";
+import {
+  addDays,
+  formatDayWithWeekday,
+  fromISO,
+  relativeDay,
+  startOfWeek,
+  today,
+  WEEKDAYS_SHORT,
+} from "../lib/dates";
 import { loadProgramDetails } from "../lib/data";
-import { formatNumber, formatWeight, plural } from "../lib/format";
+import { formatNumber, formatReps, formatWeight } from "../lib/format";
 import { navigate } from "../lib/router";
 import { useAsync } from "../lib/useAsync";
 
 export function TodayPage() {
+  useScene("olympus");
+
   const user = useUser();
   const now = today();
   const weekStart = startOfWeek(now);
@@ -36,52 +47,65 @@ export function TodayPage() {
     ?? list.find((workout) => workout.status === "planned" && workout.scheduled_date >= now);
 
   return (
-    <div className="page">
-      <p className="greeting">Привет, {user.username}</p>
+    <div className="today">
+      <SceneSection scene="olympus" className="hero" labelledBy="hero-title">
+        {next ? (
+          <NextWorkout
+            workout={next}
+            program={programById.get(next.program_id)}
+          />
+        ) : (
+          <>
+            <p className="eyebrow">{user.username}, добро пожаловать</p>
+            <h1 id="hero-title" className="hero-title">
+              Олимп ждёт
+              <br />
+              первой тренировки
+            </h1>
+            <p className="hero-lead">
+              Соберите программу и разложите её по календарю — здесь появится
+              ближайшая тренировка.
+            </p>
+            <div className="hero-actions">
+              <Button variant="primary" onClick={() => navigate("/programs")}>
+                {programs.length === 0 ? "Выбрать программу" : "К программам"}
+              </Button>
+              <Button variant="ghost" onClick={() => navigate("/schedule")}>
+                Расписание
+              </Button>
+            </div>
+          </>
+        )}
+      </SceneSection>
 
-      {next ? (
-        <NextWorkout workout={next} program={programById.get(next.program_id)} />
-      ) : (
-        <section className="hero hero-empty">
-          <h1 className="hero-title">Тренировок в плане нет</h1>
-          <p className="hero-meta">
-            Соберите программу и разложите её по календарю, чтобы здесь появилась ближайшая тренировка.
-          </p>
-          <div className="hero-actions">
-            <Button variant="primary" onClick={() => navigate("/programs")}>
-              {programs.length === 0 ? "Создать программу" : "К программам"}
-            </Button>
-            <Button onClick={() => navigate("/schedule")}>Открыть расписание</Button>
-          </div>
+      <SceneSection scene="colonnade" className="today-rest" labelledBy="week-title">
+        <section className="block">
+          <h2 id="week-title" className="block-title">Эта неделя</h2>
+          <WeekStrip start={weekStart} workouts={list} programs={programById} />
         </section>
-      )}
 
-      <section className="block">
-        <h2 className="block-title">Эта неделя</h2>
-        <WeekStrip start={weekStart} workouts={list} programs={programById} />
-      </section>
-
-      <section className="block">
-        <h2 className="block-title">Последние 4 недели</h2>
-        <dl className="figures">
-          <div>
-            <dt>Тренировок выполнено</dt>
-            <dd>{summary.workouts_completed}</dd>
-          </div>
-          <div>
-            <dt>Подходов</dt>
-            <dd>{summary.total_sets}</dd>
-          </div>
-          <div>
-            <dt>Поднято</dt>
-            <dd>{formatNumber(summary.total_volume)} кг</dd>
-          </div>
-          <div>
-            <dt>Пропущено</dt>
-            <dd>{summary.workouts_skipped}</dd>
-          </div>
-        </dl>
-      </section>
+        <section className="block">
+          <h2 className="block-title">Последние четыре недели</h2>
+          <dl className="figures">
+            <div>
+              <dt>Тренировок выполнено</dt>
+              <dd>{summary.workouts_completed}</dd>
+            </div>
+            <div>
+              <dt>Подходов</dt>
+              <dd>{summary.total_sets}</dd>
+            </div>
+            <div>
+              <dt>Поднято, кг</dt>
+              <dd>{formatNumber(summary.total_volume)}</dd>
+            </div>
+            <div>
+              <dt>Пропущено</dt>
+              <dd>{summary.workouts_skipped}</dd>
+            </div>
+          </dl>
+        </section>
+      </SceneSection>
     </div>
   );
 }
@@ -95,12 +119,15 @@ function NextWorkout({
 }) {
   const day = program?.days.find((item) => item.id === workout.program_day_id);
   const isToday = workout.scheduled_date === today();
+  const when = relativeDay(workout.scheduled_date);
 
   return (
-    <section className="hero">
-      <p className="hero-when">{relativeDay(workout.scheduled_date)}</p>
-      <h1 className="hero-title">{day?.name ?? "Тренировка"}</h1>
-      <p className="hero-meta">{program?.name}</p>
+    <>
+      <p className="eyebrow">
+        {isToday ? `Сегодня, ${formatDayWithWeekday(workout.scheduled_date)}` : when}
+      </p>
+      <h1 id="hero-title" className="hero-title">{day?.name ?? "Тренировка"}</h1>
+      {program && <p className="hero-lead">{program.name}</p>}
 
       {day && day.exercises.length > 0 && (
         <ol className="hero-plan">
@@ -108,8 +135,8 @@ function NextWorkout({
             <li key={item.id}>
               <span>{item.exercise.name}</span>
               <span className="hero-plan-target">
-                {item.sets}×{item.target_reps ?? "—"}
-                {item.target_weight !== null && ` · ${formatWeight(item.target_weight)}`}
+                {item.sets} × {formatReps(item.target_reps, item.target_reps_max)}
+                {item.target_weight !== null && `, ${formatWeight(item.target_weight)}`}
               </span>
             </li>
           ))}
@@ -120,14 +147,11 @@ function NextWorkout({
         <Button variant="primary" onClick={() => navigate(`/workouts/${workout.id}`)}>
           {isToday ? "Начать тренировку" : "Открыть тренировку"}
         </Button>
-        {day && (
-          <span className="muted">
-            {day.exercises.length}{" "}
-            {plural(day.exercises.length, "упражнение", "упражнения", "упражнений")}
-          </span>
-        )}
+        <Button variant="ghost" onClick={() => navigate("/schedule")}>
+          Расписание
+        </Button>
       </div>
-    </section>
+    </>
   );
 }
 
@@ -162,7 +186,6 @@ function WeekStrip({
                   key={workout.id}
                   href={`#/workouts/${workout.id}`}
                   className={`week-workout status-${workout.status}`}
-                  title={day?.name}
                 >
                   <span className="week-workout-name">{day?.name ?? "Тренировка"}</span>
                   <StatusPill status={workout.status} />

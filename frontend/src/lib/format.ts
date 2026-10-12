@@ -24,6 +24,12 @@ export function formatDuration(seconds: number): string {
   return `${minutes}:${rest}`;
 }
 
+// Повторы из плана: «8–12», «10» или «—»
+export function formatReps(low: number | null, high: number | null): string {
+  if (low === null) return "—";
+  return high !== null && high !== low ? `${low}–${high}` : String(low);
+}
+
 // Пустая строка из поля ввода -> null
 export function orNull(value: string): string | null {
   const trimmed = value.trim();

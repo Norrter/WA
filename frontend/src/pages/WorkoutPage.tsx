@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { workouts } from "../api";
 import type { WorkoutDetail, WorkoutExerciseDetail, WorkoutStatus } from "../api/types";
+import { useScene } from "../components/Scene";
 import { Icon } from "../components/Icon";
 import { PlateBar } from "../components/PlateBar";
 import { useToast } from "../components/Toast";
@@ -19,7 +20,7 @@ import {
 } from "../components/ui";
 import { relativeDay } from "../lib/dates";
 import { loadExercises } from "../lib/data";
-import { formatDuration, formatNumber, formatWeight } from "../lib/format";
+import { formatDuration, formatNumber, formatReps, formatWeight } from "../lib/format";
 import { navigate } from "../lib/router";
 import { useAsync } from "../lib/useAsync";
 
@@ -28,6 +29,8 @@ function isDone(item: WorkoutExerciseDetail): boolean {
 }
 
 export function WorkoutPage({ id }: { id: number }) {
+  useScene("throne");
+
   const toast = useToast();
   const [confirmDialog, confirm] = useConfirm();
   const [activeId, setActiveId] = useState<number | null>(null);
@@ -101,10 +104,11 @@ export function WorkoutPage({ id }: { id: number }) {
     <div className="page page-workout">
       <PageHeader
         back={{ href: "#/", label: "Сегодня" }}
+        eyebrow={relativeDay(workout.scheduled_date)}
         title={workout.program_day_name}
         subtitle={
           <>
-            {workout.program_name}, {relativeDay(workout.scheduled_date).toLowerCase()}{" "}
+            {workout.program_name}
             <StatusPill status={workout.status} />
           </>
         }
@@ -281,7 +285,7 @@ function SetLogger({
   return (
     <div className="logger">
       <p className="logger-plan">
-        План: {item.sets} × {item.target_reps ?? "—"}
+        План: {item.sets} × {formatReps(item.target_reps, item.target_reps_max)}
         {item.target_weight !== null && `, ${formatWeight(item.target_weight)}`}
         {item.rest_seconds !== null && `, отдых ${formatDuration(item.rest_seconds)}`}
       </p>

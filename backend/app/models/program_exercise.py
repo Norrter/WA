@@ -46,6 +46,12 @@ class ProgramExercise(Base):
         nullable=True,
     )
 
+    # Верхняя граница диапазона повторов: 8–12 -> target_reps=8, target_reps_max=12
+    target_reps_max: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+    )
+
     target_weight: Mapped[float | None] = mapped_column(
         nullable=True,
     )

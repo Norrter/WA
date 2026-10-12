@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import { workouts } from "../api";
 import type { ProgramDetail, ScheduledWorkout } from "../api/types";
+import { useScene } from "../components/Scene";
 import { Icon } from "../components/Icon";
 import { AutoPlanDialog, PlanWorkoutDialog } from "../components/ScheduleDialogs";
 import { Button, Empty, ErrorNote, IconButton, Loading, PageHeader, StatusPill } from "../components/ui";
@@ -19,6 +20,8 @@ import { loadProgramDetails } from "../lib/data";
 import { useAsync } from "../lib/useAsync";
 
 export function SchedulePage() {
+  useScene("colonnade");
+
   const now = new Date();
   const [cursor, setCursor] = useState({ year: now.getFullYear(), month: now.getMonth() });
   const [dialog, setDialog] = useState<
@@ -67,7 +70,7 @@ export function SchedulePage() {
   );
 
   return (
-    <div className="page">
+    <div className="page page-wide">
       <PageHeader
         title="Расписание"
         actions={

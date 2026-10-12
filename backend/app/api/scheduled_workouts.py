@@ -294,6 +294,7 @@ async def get_scheduled_workout_full(
                 "order_index": program_exercise.order_index,
                 "sets": program_exercise.sets,
                 "target_reps": program_exercise.target_reps,
+                "target_reps_max": program_exercise.target_reps_max,
                 "target_weight": program_exercise.target_weight,
                 "rest_seconds": program_exercise.rest_seconds,
                 "notes": program_exercise.notes,

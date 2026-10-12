@@ -13,9 +13,11 @@ class Program(Base):
         primary_key=True,
     )
 
-    user_id: Mapped[int] = mapped_column(
+    # NULL — общий шаблон: его видят все, а себе берут копию
+    # через POST /programs/{id}/copy
+    user_id: Mapped[int | None] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
     )
 
     name: Mapped[str] = mapped_column(
@@ -47,7 +49,7 @@ class Program(Base):
         order_by="ProgramDay.order_index",
     )
 
-    user: Mapped["User"] = relationship(
+    user: Mapped["User | None"] = relationship(
         back_populates="programs",
     )
 

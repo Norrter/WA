@@ -1,11 +1,14 @@
 import { useState, type FormEvent } from "react";
 
 import { users } from "../api";
+import { useScene } from "../components/Scene";
 import { useAuth, useUser } from "../components/Auth";
 import { useToast } from "../components/Toast";
 import { Button, Field, PageHeader, useConfirm } from "../components/ui";
 
 export function ProfilePage() {
+  useScene("pillars");
+
   const user = useUser();
   const { setUser, logout } = useAuth();
   const toast = useToast();
