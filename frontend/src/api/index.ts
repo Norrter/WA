@@ -2,6 +2,9 @@
 
 import { query, request } from "./client";
 import type {
+  CoachExerciseRecords,
+  CoachUser,
+  CoachWorkout,
   Exercise,
   ExerciseInput,
   ExerciseRecords,
@@ -132,4 +135,25 @@ export const stats = {
     request<StatsSummary>("GET", `/stats/summary${query({ date_from, date_to })}`),
   weekly: (weeks: number) =>
     request<WeeklyVolume[]>("GET", `/stats/weekly-volume${query({ weeks })}`),
+};
+
+// Кабинет тренера: только чтение, доступно пользователям с ролью coach
+export const coach = {
+  users: (date_from: string, date_to: string) =>
+    request<CoachUser[]>("GET", `/coach/users${query({ date_from, date_to })}`),
+  user: (id: number) => request<User>("GET", `/coach/users/${id}`),
+  summary: (id: number, date_from: string, date_to: string) =>
+    request<StatsSummary>(
+      "GET",
+      `/coach/users/${id}/summary${query({ date_from, date_to })}`,
+    ),
+  weekly: (id: number, weeks: number) =>
+    request<WeeklyVolume[]>("GET", `/coach/users/${id}/weekly-volume${query({ weeks })}`),
+  records: (id: number) =>
+    request<CoachExerciseRecords[]>("GET", `/coach/users/${id}/records`),
+  workouts: (id: number, date_from: string, date_to: string, limit = 15) =>
+    request<CoachWorkout[]>(
+      "GET",
+      `/coach/users/${id}/workouts${query({ date_from, date_to, limit })}`,
+    ),
 };

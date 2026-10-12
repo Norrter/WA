@@ -2,10 +2,14 @@
 
 export type WorkoutStatus = "planned" | "completed" | "skipped";
 
+export type UserRole = "user" | "coach";
+
 export interface User {
   id: number;
   email: string;
   username: string;
+  // coach — тренер, видит статистику всех пользователей
+  role: UserRole;
   created_at: string;
   updated_at: string;
 }
@@ -169,5 +173,38 @@ export interface WeeklyVolume {
   workouts: number;
   sets: number;
   reps: number;
+  volume: number;
+}
+
+// Кабинет тренера
+
+export interface CoachUser {
+  id: number;
+  email: string;
+  username: string;
+  role: UserRole;
+  created_at: string;
+  programs: number;
+  workouts_planned: number;
+  workouts_completed: number;
+  workouts_skipped: number;
+  total_sets: number;
+  total_volume: number;
+  // последняя выполненная тренировка за всё время
+  last_workout: string | null;
+}
+
+export interface CoachExerciseRecords extends ExerciseRecords {
+  exercise_name: string;
+  muscle_group: string | null;
+}
+
+export interface CoachWorkout {
+  id: number;
+  scheduled_date: string;
+  status: WorkoutStatus;
+  program_name: string;
+  day_name: string;
+  sets_completed: number;
   volume: number;
 }

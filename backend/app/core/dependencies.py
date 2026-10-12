@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import decode_access_token
 from app.database.session import get_session
-from app.models.user import User
+from app.models.user import User, UserRole
 
 
 security = HTTPBearer()
@@ -34,3 +34,16 @@ async def get_current_user(
         )
 
     return user
+
+
+async def get_current_coach(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """Пускает только тренеров."""
+    if current_user.role != UserRole.coach.value:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Coach access required",
+        )
+
+    return current_user

@@ -2,6 +2,8 @@ import { useAuth } from "./components/Auth";
 import { Layout } from "./components/Layout";
 import { Empty, Loading } from "./components/ui";
 import { useRoute } from "./lib/router";
+import { CoachPage } from "./pages/CoachPage";
+import { CoachUserPage } from "./pages/CoachUserPage";
 import { ExercisePage } from "./pages/ExercisePage";
 import { ExercisesPage } from "./pages/ExercisesPage";
 import { LoginPage } from "./pages/LoginPage";
@@ -49,6 +51,20 @@ export function App() {
       break;
     case "profile":
       page = <ProfilePage />;
+      break;
+    case "coach":
+    case "coachUser":
+      if (user.role !== "coach") {
+        page = (
+          <Empty title="Раздел только для тренера">
+            <a href="#/">На главную</a>
+          </Empty>
+        );
+      } else if (route.name === "coach") {
+        page = <CoachPage />;
+      } else {
+        page = <CoachUserPage key={route.id} id={route.id} />;
+      }
       break;
     default:
       page = (

@@ -1,13 +1,28 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, String, func
+from enum import Enum
+
+from sqlalchemy import CheckConstraint, DateTime, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
 
 
+class UserRole(str, Enum):
+    user = "user"
+    # Тренер видит статистику всех пользователей
+    coach = "coach"
+
+
 class User(Base):
     __tablename__ = "users"
+
+    __table_args__ = (
+        CheckConstraint(
+            "role IN ('user', 'coach')",
+            name="ck_users_role",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
 
@@ -28,6 +43,14 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(
         String(255),
         nullable=False,
+    )
+
+    # Роль назначается по списку COACH_EMAILS при запуске сервера
+    role: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default=UserRole.user.value,
+        server_default=UserRole.user.value,
     )
 
     created_at: Mapped[datetime] = mapped_column(

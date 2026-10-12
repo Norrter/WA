@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.helpers import apply_changes
 from app.core.dependencies import get_current_user
+from app.core.roles import role_for_email
 from app.core.security import hash_password, verify_password
 from app.database.session import get_session
 from app.models.user import User
@@ -71,6 +72,7 @@ async def create_user(
         email=data.email,
         username=data.username,
         password_hash=hash_password(data.password),
+        role=role_for_email(data.email),
     )
 
     session.add(user)
@@ -95,6 +97,9 @@ async def update_me(
     )
 
     apply_changes(current_user, data, partial=True)
+
+    # Роль тренера привязана к email
+    current_user.role = role_for_email(current_user.email)
 
     await session.commit()
     await session.refresh(current_user)

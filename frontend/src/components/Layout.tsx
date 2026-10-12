@@ -12,6 +12,9 @@ const NAV: { href: string; label: string; match: Route["name"][] }[] = [
   { href: "#/profile", label: "Профиль", match: ["profile"] },
 ];
 
+// Раздел видят только тренеры
+const COACH_NAV = { href: "#/coach", label: "Тренер", match: ["coach", "coachUser"] as Route["name"][] };
+
 export function Layout({ route, children }: { route: Route; children: ReactNode }) {
   const { user } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -43,6 +46,7 @@ export function Layout({ route, children }: { route: Route; children: ReactNode 
     };
   }, [menuOpen]);
 
+  const nav = user?.role === "coach" ? [...NAV, COACH_NAV] : NAV;
   const isActive = (item: (typeof NAV)[number]) => item.match.includes(route.name);
 
   return (
@@ -51,7 +55,7 @@ export function Layout({ route, children }: { route: Route; children: ReactNode 
         <a className="brand" href="#/">Greek's Gym</a>
 
         <nav className="topnav" aria-label="Разделы">
-          {NAV.map((item) => (
+          {nav.map((item) => (
             <a
               key={item.href}
               href={item.href}
@@ -82,7 +86,7 @@ export function Layout({ route, children }: { route: Route; children: ReactNode 
       >
         <nav aria-label="Разделы">
           <ol className="menu-list">
-            {NAV.map((item, index) => (
+            {nav.map((item, index) => (
               <li key={item.href} style={{ animationDelay: `${index * 50}ms` }}>
                 <a
                   href={item.href}

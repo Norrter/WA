@@ -1,9 +1,12 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
 from app.api.auth import router as auth_router
+from app.api.coach import router as coach_router
 from app.api.exercises import router as exercises_router
 from app.api.program_days import router as program_days_router
 from app.api.program_exercises import router as program_exercises_router
@@ -14,9 +17,20 @@ from app.api.users import router as users_router
 from app.api.workout_sets import router as workout_sets_router
 from app.config import settings
 from app.core.errors import integrity_error_handler
+from app.core.roles import sync_coach_roles
 from app.database.session import AsyncSessionLocal
 
-app = FastAPI(title="Workout App API")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Роли тренеров берутся из COACH_EMAILS
+    async with AsyncSessionLocal() as session:
+        await sync_coach_roles(session)
+
+    yield
+
+
+app = FastAPI(title="Workout App API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -38,6 +52,7 @@ app.include_router(progress_router)
 app.include_router(exercises_router)
 app.include_router(scheduled_workouts_router)
 app.include_router(workout_sets_router)
+app.include_router(coach_router)
 
 
 @app.get("/health")

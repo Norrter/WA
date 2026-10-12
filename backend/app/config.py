@@ -1,7 +1,9 @@
+import json
 from pathlib import Path
+from typing import Annotated
 
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 # .env лежит в корне проекта (на уровень выше backend/),
@@ -27,6 +29,12 @@ class Settings(BaseSettings):
         "http://127.0.0.1:5173",
     ]
 
+    # Email-адреса тренеров через запятую:
+    # COACH_EMAILS=coach@example.com,second@example.com
+    # Тренер видит статистику всех пользователей. Роли выставляются
+    # при каждом запуске сервера
+    coach_emails: Annotated[list[str], NoDecode] = []
+
     # Печатать ли SQL-запросы в консоль
     sql_echo: bool = False
 
@@ -40,6 +48,24 @@ class Settings(BaseSettings):
                 return "postgresql+asyncpg://" + value[len(prefix):]
 
         return value
+
+    @field_validator("coach_emails", mode="before")
+    @classmethod
+    def split_coach_emails(cls, value):
+        # Принимаем и строку через запятую, и JSON-список
+        if isinstance(value, str):
+            value = value.strip()
+
+            if value.startswith("["):
+                value = json.loads(value)
+            else:
+                value = value.split(",")
+
+        return [
+            email.strip().lower()
+            for email in value
+            if email and email.strip()
+        ]
 
     model_config = SettingsConfigDict(
         env_file=ENV_FILE,

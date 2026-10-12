@@ -147,7 +147,7 @@ export function ProgressPage() {
             <p className="muted">Здесь появятся рекорды по упражнениям из ваших программ.</p>
           </Empty>
         ) : (
-          <table className="records">
+          <table className="records stack">
             <thead>
               <tr>
                 <th>Упражнение</th>
@@ -172,12 +172,12 @@ export function ProgressPage() {
                       {row.name}
                     </button>
                   </td>
-                  <td className="num">
+                  <td className="num" data-label="Макс. вес">
                     {row.records.max_weight
                       ? `${formatWeight(row.records.max_weight.weight)} × ${row.records.max_weight.reps}`
                       : "—"}
                   </td>
-                  <td className="num">{formatWeight(row.records.best_estimated_1rm)}</td>
+                  <td className="num" data-label="На 1 повтор">{formatWeight(row.records.best_estimated_1rm)}</td>
                   <td className="hide-mobile muted">
                     {row.records.last_performed ? formatDay(row.records.last_performed) : "—"}
                   </td>
