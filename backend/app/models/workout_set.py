@@ -23,9 +23,20 @@ class WorkoutSet(Base):
         nullable=False,
     )
 
-    program_exercise_id: Mapped[int] = mapped_column(
-        ForeignKey("program_exercises.id", ondelete="CASCADE"),
+    # Строка плана, по которой сделан подход. Пусто, если упражнение
+    # потом убрали из программы — подход при этом остаётся в истории
+    program_exercise_id: Mapped[int | None] = mapped_column(
+        ForeignKey("program_exercises.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    # Само упражнение: по нему считаются история и рекорды. Упражнение
+    # с записанными подходами удалить нельзя. Проверка отложена до конца
+    # транзакции, поэтому удаление аккаунта целиком проходит
+    exercise_id: Mapped[int] = mapped_column(
+        ForeignKey("exercises.id", deferrable=True, initially="DEFERRED"),
         nullable=False,
+        index=True,
     )
 
     set_number: Mapped[int] = mapped_column(
@@ -53,6 +64,6 @@ class WorkoutSet(Base):
         back_populates="workout_sets",
     )
 
-    program_exercise: Mapped["ProgramExercise"] = relationship(
+    program_exercise: Mapped["ProgramExercise | None"] = relationship(
         back_populates="workout_sets",
     )

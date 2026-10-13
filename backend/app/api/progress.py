@@ -2,7 +2,7 @@
 
 from datetime import date, timedelta
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,11 +10,10 @@ from app.api.helpers import Pagination, get_visible_exercise
 from app.core.dependencies import get_current_user
 from app.database.session import get_session
 from app.models.exercise import Exercise
-from app.models.program import Program
-from app.models.program_exercise import ProgramExercise
 from app.models.scheduled_workout import ScheduledWorkout, WorkoutStatus
 from app.models.user import User
 from app.models.workout_set import WorkoutSet
+from app.schemas.coach import CoachExerciseRecords, PeriodOverview
 from app.schemas.progress import (
     ExerciseHistoryItem,
     ExerciseRecordsResponse,
@@ -34,12 +33,72 @@ def user_sets_query(user_id: int):
             ScheduledWorkout,
             ScheduledWorkout.id == WorkoutSet.scheduled_workout_id,
         )
-        .join(
-            Program,
-            Program.id == ScheduledWorkout.program_id,
-        )
-        .where(Program.user_id == user_id)
+        .where(ScheduledWorkout.user_id == user_id)
     )
+
+
+async def ensure_exercise_readable(
+    exercise_id: int,
+    session: AsyncSession,
+    user: User,
+) -> None:
+    """Историю можно смотреть по видимому упражнению или по тому,
+    которое человек уже выполнял (например, своё упражнение тренера
+    в назначенной программе)."""
+    try:
+        await get_visible_exercise(exercise_id, session, user)
+        return
+    except HTTPException:
+        done = await session.scalar(
+            user_sets_query(user.id)
+            .where(WorkoutSet.exercise_id == exercise_id)
+            .limit(1)
+        )
+
+        if done is None:
+            raise
+
+
+async def exercise_history(
+    session: AsyncSession,
+    user_id: int,
+    exercise_id: int,
+    date_from: date | None,
+    date_to: date | None,
+    limit: int,
+    offset: int,
+) -> list[dict]:
+    """Подходы по упражнению от новых к старым."""
+    query = user_sets_query(user_id).where(WorkoutSet.exercise_id == exercise_id)
+
+    if date_from is not None:
+        query = query.where(ScheduledWorkout.scheduled_date >= date_from)
+
+    if date_to is not None:
+        query = query.where(ScheduledWorkout.scheduled_date <= date_to)
+
+    result = await session.execute(
+        query.order_by(
+            ScheduledWorkout.scheduled_date.desc(),
+            ScheduledWorkout.id.desc(),
+            WorkoutSet.set_number,
+        )
+        .limit(limit)
+        .offset(offset)
+    )
+
+    return [
+        {
+            "workout_set_id": workout_set.id,
+            "scheduled_workout_id": workout_set.scheduled_workout_id,
+            "date": scheduled_date,
+            "set_number": workout_set.set_number,
+            "weight": workout_set.weight,
+            "reps": workout_set.reps,
+            "completed": workout_set.completed,
+        }
+        for workout_set, scheduled_date in result.all()
+    ]
 
 
 def estimate_1rm(weight: float, reps: int) -> float:
@@ -106,11 +165,7 @@ async def all_exercise_records(
     result = await session.execute(
         user_sets_query(user_id)
         .add_columns(Exercise.id, Exercise.name, Exercise.muscle_group)
-        .join(
-            ProgramExercise,
-            ProgramExercise.id == WorkoutSet.program_exercise_id,
-        )
-        .join(Exercise, Exercise.id == ProgramExercise.exercise_id)
+        .join(Exercise, Exercise.id == WorkoutSet.exercise_id)
         .where(WorkoutSet.completed.is_(True))
         .order_by(ScheduledWorkout.scheduled_date, WorkoutSet.id)
     )
@@ -151,11 +206,7 @@ async def stats_summary(
     в каждом статусе и суммарный объём по выполненным подходам."""
     workouts_query = (
         select(ScheduledWorkout.status, func.count())
-        .join(
-            Program,
-            Program.id == ScheduledWorkout.program_id,
-        )
-        .where(Program.user_id == user_id)
+        .where(ScheduledWorkout.user_id == user_id)
         .group_by(ScheduledWorkout.status)
     )
 
@@ -263,49 +314,17 @@ async def get_exercise_history(
     current_user: User = Depends(get_current_user),
 ):
     """Все свои подходы по упражнению, от новых к старым."""
-    await get_visible_exercise(
-        exercise_id,
+    await ensure_exercise_readable(exercise_id, session, current_user)
+
+    return await exercise_history(
         session,
-        current_user,
+        current_user.id,
+        exercise_id,
+        date_from,
+        date_to,
+        pagination.limit,
+        pagination.offset,
     )
-
-    query = (
-        user_sets_query(current_user.id)
-        .join(
-            ProgramExercise,
-            ProgramExercise.id == WorkoutSet.program_exercise_id,
-        )
-        .where(ProgramExercise.exercise_id == exercise_id)
-    )
-
-    if date_from is not None:
-        query = query.where(ScheduledWorkout.scheduled_date >= date_from)
-
-    if date_to is not None:
-        query = query.where(ScheduledWorkout.scheduled_date <= date_to)
-
-    result = await session.execute(
-        query.order_by(
-            ScheduledWorkout.scheduled_date.desc(),
-            ScheduledWorkout.id.desc(),
-            WorkoutSet.set_number,
-        )
-        .limit(pagination.limit)
-        .offset(pagination.offset)
-    )
-
-    return [
-        {
-            "workout_set_id": workout_set.id,
-            "scheduled_workout_id": workout_set.scheduled_workout_id,
-            "date": scheduled_date,
-            "set_number": workout_set.set_number,
-            "weight": workout_set.weight,
-            "reps": workout_set.reps,
-            "completed": workout_set.completed,
-        }
-        for workout_set, scheduled_date in result.all()
-    ]
 
 
 @router.get(
@@ -319,20 +338,12 @@ async def get_exercise_records(
 ):
     """Личные рекорды по упражнению. Считаются только выполненные
     подходы."""
-    await get_visible_exercise(
-        exercise_id,
-        session,
-        current_user,
-    )
+    await ensure_exercise_readable(exercise_id, session, current_user)
 
     result = await session.execute(
         user_sets_query(current_user.id)
-        .join(
-            ProgramExercise,
-            ProgramExercise.id == WorkoutSet.program_exercise_id,
-        )
         .where(
-            ProgramExercise.exercise_id == exercise_id,
+            WorkoutSet.exercise_id == exercise_id,
             WorkoutSet.completed.is_(True),
         )
         .order_by(ScheduledWorkout.scheduled_date, WorkoutSet.id)
@@ -368,3 +379,40 @@ async def get_weekly_volume(
     """Объём по неделям за последние weeks недель, включая текущую.
     Недели без тренировок возвращаются с нулями."""
     return await weekly_volume(session, current_user.id, weeks)
+
+
+@router.get(
+    "/stats/overview",
+    response_model=PeriodOverview,
+)
+async def get_stats_overview(
+    date_from: date | None = Query(None),
+    date_to: date | None = Query(None),
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Обзор за период (по умолчанию — последние 4 недели) и за такой же
+    период перед ним: выполнение плана, тренировки, новые рекорды,
+    изменение расчётной силы, ключевые упражнения, средние оценки."""
+    from app.services.coaching import period_overview
+
+    date_to = date_to or date.today()
+    date_from = date_from or date_to - timedelta(days=27)
+
+    if date_from > date_to:
+        raise HTTPException(status_code=422, detail="date_from is after date_to")
+
+    return await period_overview(session, current_user.id, date_from, date_to)
+
+
+@router.get(
+    "/stats/records",
+    response_model=list[CoachExerciseRecords],
+)
+async def get_all_records(
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Рекорды по всем упражнениям, которые человек выполнял,
+    сначала недавние."""
+    return await all_exercise_records(session, current_user.id)

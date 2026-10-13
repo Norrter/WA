@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date, datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
@@ -8,11 +8,12 @@ from sqlalchemy.orm import selectinload
 from app.api.helpers import (
     Pagination,
     apply_changes,
-    get_owned_program,
     get_owned_workout,
+    get_schedulable_program,
 )
 from app.core.dependencies import get_current_user
 from app.database.session import get_session
+from app.models.exercise import Exercise
 from app.models.program import Program
 from app.models.program_day import ProgramDay
 from app.models.program_exercise import ProgramExercise
@@ -27,6 +28,7 @@ from app.schemas.scheduled_workout import (
     ScheduledWorkoutResponse,
     ScheduledWorkoutUpdate,
 )
+from app.services.programs import schedule_program
 
 
 router = APIRouter(
@@ -34,20 +36,20 @@ router = APIRouter(
     tags=["Scheduled Workouts"],
 )
 
+FEEDBACK_FIELDS = {"wellbeing", "difficulty", "feedback_comment"}
+
 
 async def get_program_day(
     program_id: int,
     program_day_id: int,
     session: AsyncSession,
-):
-    result = await session.execute(
+) -> ProgramDay:
+    program_day = await session.scalar(
         select(ProgramDay).where(
             ProgramDay.id == program_day_id,
             ProgramDay.program_id == program_id,
         )
     )
-
-    program_day = result.scalar_one_or_none()
 
     if program_day is None:
         raise HTTPException(
@@ -68,21 +70,24 @@ async def create_scheduled_workout(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    await get_owned_program(
+    program = await get_schedulable_program(
         data.program_id,
         session,
         current_user,
     )
 
-    await get_program_day(
+    day = await get_program_day(
         data.program_id,
         data.program_day_id,
         session,
     )
 
     workout = ScheduledWorkout(
-        program_id=data.program_id,
-        program_day_id=data.program_day_id,
+        user_id=current_user.id,
+        program_id=program.id,
+        program_day_id=day.id,
+        program_name=program.name,
+        day_name=day.name,
         scheduled_date=data.scheduled_date,
         status=data.status.value,
     )
@@ -111,60 +116,19 @@ async def generate_schedule(
     дни недели, начиная со start_date, на weeks недель. Даты, на которые
     у этой программы уже есть тренировка, пропускаются.
     """
-    await get_owned_program(
+    program = await get_schedulable_program(
         data.program_id,
         session,
         current_user,
     )
 
-    result = await session.execute(
-        select(ProgramDay)
-        .where(ProgramDay.program_id == data.program_id)
-        .order_by(ProgramDay.order_index, ProgramDay.id)
+    workouts = await schedule_program(
+        session,
+        program,
+        data.start_date,
+        data.weeks,
+        data.weekdays,
     )
-
-    days = result.scalars().all()
-
-    if not days:
-        raise HTTPException(
-            status_code=400,
-            detail="Program has no days to schedule",
-        )
-
-    end_date = data.start_date + timedelta(weeks=data.weeks)
-
-    result = await session.execute(
-        select(ScheduledWorkout.scheduled_date).where(
-            ScheduledWorkout.program_id == data.program_id,
-            ScheduledWorkout.scheduled_date >= data.start_date,
-            ScheduledWorkout.scheduled_date < end_date,
-        )
-    )
-
-    busy_dates = set(result.scalars().all())
-
-    workouts = []
-    current_date = data.start_date
-
-    while current_date < end_date:
-        if (
-            current_date.weekday() in data.weekdays
-            and current_date not in busy_dates
-        ):
-            day = days[len(workouts) % len(days)]
-
-            workouts.append(
-                ScheduledWorkout(
-                    program_id=data.program_id,
-                    program_day_id=day.id,
-                    scheduled_date=current_date,
-                    status=WorkoutStatus.planned.value,
-                )
-            )
-
-        current_date += timedelta(days=1)
-
-    session.add_all(workouts)
 
     await session.commit()
 
@@ -186,15 +150,8 @@ async def get_scheduled_workouts(
 ):
     """Свои тренировки. Фильтры: диапазон дат (включительно),
     статус, программа."""
-    query = (
-        select(ScheduledWorkout)
-        .join(
-            Program,
-            Program.id == ScheduledWorkout.program_id,
-        )
-        .where(
-            Program.user_id == current_user.id,
-        )
+    query = select(ScheduledWorkout).where(
+        ScheduledWorkout.user_id == current_user.id,
     )
 
     if date_from is not None:
@@ -237,6 +194,109 @@ async def get_scheduled_workout(
     )
 
 
+async def workout_detail(session: AsyncSession, workout: ScheduledWorkout) -> dict:
+    """Тренировка целиком: план дня и сделанные подходы. Подходы
+    по упражнениям, которых в плане уже нет, тоже показываются."""
+    program = (
+        await session.get(Program, workout.program_id)
+        if workout.program_id is not None
+        else None
+    )
+
+    day = None
+
+    if workout.program_day_id is not None:
+        day = await session.scalar(
+            select(ProgramDay)
+            .options(
+                selectinload(ProgramDay.exercises)
+                .selectinload(ProgramExercise.exercise)
+            )
+            .where(ProgramDay.id == workout.program_day_id)
+        )
+
+    sets = (
+        await session.scalars(
+            select(WorkoutSet)
+            .where(WorkoutSet.scheduled_workout_id == workout.id)
+            .order_by(WorkoutSet.set_number, WorkoutSet.id)
+        )
+    ).all()
+
+    planned_ids = {item.id for item in day.exercises} if day else set()
+    by_plan: dict[int, list[WorkoutSet]] = {}
+    orphans: dict[int, list[WorkoutSet]] = {}
+
+    for workout_set in sets:
+        if workout_set.program_exercise_id in planned_ids:
+            by_plan.setdefault(workout_set.program_exercise_id, []).append(workout_set)
+        else:
+            orphans.setdefault(workout_set.exercise_id, []).append(workout_set)
+
+    exercises = [
+        {
+            "program_exercise_id": item.id,
+            "exercise": item.exercise,
+            "order_index": item.order_index,
+            "sets": item.sets,
+            "target_reps": item.target_reps,
+            "target_reps_max": item.target_reps_max,
+            "target_weight": item.target_weight,
+            "rest_seconds": item.rest_seconds,
+            "notes": item.notes,
+            "performed_sets": by_plan.get(item.id, []),
+        }
+        for item in (day.exercises if day else [])
+    ]
+
+    if orphans:
+        known = {
+            exercise.id: exercise
+            for exercise in (
+                await session.scalars(select(Exercise).where(Exercise.id.in_(orphans)))
+            ).all()
+        }
+        start = max((item["order_index"] for item in exercises), default=0) + 1
+
+        for offset, (exercise_id, performed) in enumerate(orphans.items()):
+            exercises.append(
+                {
+                    "program_exercise_id": None,
+                    "exercise": known[exercise_id],
+                    "order_index": start + offset,
+                    "sets": len(performed),
+                    "target_reps": None,
+                    "target_reps_max": None,
+                    "target_weight": None,
+                    "rest_seconds": None,
+                    "notes": None,
+                    "performed_sets": performed,
+                }
+            )
+
+    coach_name = None
+
+    if program is not None and program.assigned_by_coach_id is not None:
+        coach = await session.get(User, program.assigned_by_coach_id)
+        coach_name = coach.username if coach else None
+
+    return {
+        "id": workout.id,
+        "program_id": workout.program_id,
+        "program_name": program.name if program else (workout.program_name or "Программа"),
+        "program_day_id": workout.program_day_id,
+        "program_day_name": day.name if day else (workout.day_name or "Тренировка"),
+        "scheduled_date": workout.scheduled_date,
+        "status": workout.status,
+        "wellbeing": workout.wellbeing,
+        "difficulty": workout.difficulty,
+        "feedback_comment": workout.feedback_comment,
+        "feedback_at": workout.feedback_at,
+        "coach_name": coach_name,
+        "exercises": exercises,
+    }
+
+
 @router.get(
     "/{scheduled_workout_id}/full",
     response_model=ScheduledWorkoutDetailResponse,
@@ -254,58 +314,7 @@ async def get_scheduled_workout_full(
         current_user,
     )
 
-    program = await session.get(Program, workout.program_id)
-
-    day = await session.scalar(
-        select(ProgramDay)
-        .options(
-            selectinload(ProgramDay.exercises)
-            .selectinload(ProgramExercise.exercise)
-        )
-        .where(ProgramDay.id == workout.program_day_id)
-    )
-
-    result = await session.execute(
-        select(WorkoutSet)
-        .where(WorkoutSet.scheduled_workout_id == workout.id)
-        .order_by(WorkoutSet.set_number, WorkoutSet.id)
-    )
-
-    sets_by_exercise: dict[int, list[WorkoutSet]] = {}
-
-    for workout_set in result.scalars().all():
-        sets_by_exercise.setdefault(
-            workout_set.program_exercise_id,
-            [],
-        ).append(workout_set)
-
-    return {
-        "id": workout.id,
-        "program_id": program.id,
-        "program_name": program.name,
-        "program_day_id": day.id,
-        "program_day_name": day.name,
-        "scheduled_date": workout.scheduled_date,
-        "status": workout.status,
-        "exercises": [
-            {
-                "program_exercise_id": program_exercise.id,
-                "exercise": program_exercise.exercise,
-                "order_index": program_exercise.order_index,
-                "sets": program_exercise.sets,
-                "target_reps": program_exercise.target_reps,
-                "target_reps_max": program_exercise.target_reps_max,
-                "target_weight": program_exercise.target_weight,
-                "rest_seconds": program_exercise.rest_seconds,
-                "notes": program_exercise.notes,
-                "performed_sets": sets_by_exercise.get(
-                    program_exercise.id,
-                    [],
-                ),
-            }
-            for program_exercise in day.exercises
-        ],
-    }
+    return await workout_detail(session, workout)
 
 
 @router.put(
@@ -324,13 +333,13 @@ async def update_scheduled_workout(
         current_user,
     )
 
-    await get_owned_program(
+    program = await get_schedulable_program(
         data.program_id,
         session,
         current_user,
     )
 
-    await get_program_day(
+    day = await get_program_day(
         data.program_id,
         data.program_day_id,
         session,
@@ -353,8 +362,10 @@ async def update_scheduled_workout(
                 ),
             )
 
-    workout.program_id = data.program_id
-    workout.program_day_id = data.program_day_id
+    workout.program_id = program.id
+    workout.program_day_id = day.id
+    workout.program_name = program.name
+    workout.day_name = day.name
     workout.scheduled_date = data.scheduled_date
     workout.status = data.status.value
 
@@ -374,7 +385,8 @@ async def patch_scheduled_workout(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    """Перенести тренировку на другую дату или сменить статус."""
+    """Перенести тренировку, сменить статус или оставить оценку:
+    самочувствие (1–5), сложность (1–10) и комментарий."""
     workout = await get_owned_workout(
         scheduled_workout_id,
         session,
@@ -385,6 +397,12 @@ async def patch_scheduled_workout(
 
     if data.status is not None:
         workout.status = data.status.value
+
+    if data.model_fields_set & FEEDBACK_FIELDS:
+        if workout.feedback_comment == "":
+            workout.feedback_comment = None
+
+        workout.feedback_at = datetime.now(timezone.utc)
 
     await session.commit()
     await session.refresh(workout)

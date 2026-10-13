@@ -90,7 +90,7 @@ async def create_workout_set(
         current_user,
     )
 
-    await get_valid_program_exercise(
+    program_exercise = await get_valid_program_exercise(
         workout,
         data.program_exercise_id,
         session,
@@ -99,6 +99,7 @@ async def create_workout_set(
     workout_set = WorkoutSet(
         scheduled_workout_id=scheduled_workout_id,
         program_exercise_id=data.program_exercise_id,
+        exercise_id=program_exercise.exercise_id,
         set_number=data.set_number,
         weight=data.weight,
         reps=data.reps,
@@ -133,8 +134,9 @@ async def get_workout_sets(
             WorkoutSet.scheduled_workout_id == scheduled_workout_id
         )
         .order_by(
-            WorkoutSet.program_exercise_id,
+            WorkoutSet.exercise_id,
             WorkoutSet.set_number,
+            WorkoutSet.id,
         )
     )
 
@@ -186,11 +188,12 @@ async def update_workout_set_common(
     )
 
     if data.program_exercise_id is not None:
-        await get_valid_program_exercise(
+        program_exercise = await get_valid_program_exercise(
             workout,
             data.program_exercise_id,
             session,
         )
+        workout_set.exercise_id = program_exercise.exercise_id
 
     apply_changes(workout_set, data, partial=partial)
 

@@ -42,5 +42,7 @@ class UserResponse(BaseModel):
     email: EmailStr
     username: str
     role: str
+    # администратор: видит админ-панель (ADMIN_EMAILS)
+    is_admin: bool = False
     created_at: datetime
     updated_at: datetime

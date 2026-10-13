@@ -154,6 +154,7 @@ async def get_program_exercises(
         day_id,
         session,
         current_user,
+        edit=False,
     )
 
     return await load_program_exercises(day_id, session)
@@ -217,6 +218,7 @@ async def get_program_exercise(
         day_id,
         session,
         current_user,
+        edit=False,
     )
 
     return await load_program_exercise(

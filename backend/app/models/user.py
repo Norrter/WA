@@ -5,6 +5,7 @@ from enum import Enum
 from sqlalchemy import CheckConstraint, DateTime, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.config import settings
 from app.models.base import Base
 
 
@@ -66,7 +67,13 @@ class User(Base):
         nullable=False,
     )
 
+    @property
+    def is_admin(self) -> bool:
+        """Администратор задаётся списком ADMIN_EMAILS."""
+        return self.email.strip().lower() in settings.admin_emails
+
     programs: Mapped[list["Program"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
+        foreign_keys="Program.user_id",
     )

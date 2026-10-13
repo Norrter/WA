@@ -19,8 +19,14 @@ async def test_scheduled_workout_crud(client, alice):
         "id": workout["id"],
         "program_id": program["id"],
         "program_day_id": day["id"],
+        "program_name": program["name"],
+        "day_name": day["name"],
         "scheduled_date": "2026-10-05",
         "status": "planned",
+        "wellbeing": None,
+        "difficulty": None,
+        "feedback_comment": None,
+        "feedback_at": None,
     }
     url = f"/scheduled-workouts/{workout['id']}"
 

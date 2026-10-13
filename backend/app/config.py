@@ -35,6 +35,18 @@ class Settings(BaseSettings):
     # при каждом запуске сервера
     coach_emails: Annotated[list[str], NoDecode] = []
 
+    # Email-адреса администраторов через запятую:
+    # ADMIN_EMAILS=me@example.com
+    # Администратор видит админ-панель и может менять любые данные
+    admin_emails: Annotated[list[str], NoDecode] = []
+
+    # Пороги для меток в кабинете тренера:
+    # «Проверить» — выполнение плана ниже порога или долго нет тренировок;
+    # «Оценить прогресс» — тренируется, но новых рекордов давно нет
+    coach_adherence_threshold: float = Field(0.7, ge=0, le=1)
+    coach_inactive_days: int = Field(5, ge=1)
+    coach_stagnation_days: int = Field(28, ge=7)
+
     # Печатать ли SQL-запросы в консоль
     sql_echo: bool = False
 
@@ -49,7 +61,7 @@ class Settings(BaseSettings):
 
         return value
 
-    @field_validator("coach_emails", mode="before")
+    @field_validator("coach_emails", "admin_emails", mode="before")
     @classmethod
     def split_coach_emails(cls, value):
         # Принимаем и строку через запятую, и JSON-список

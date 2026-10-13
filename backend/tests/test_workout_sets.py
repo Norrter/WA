@@ -19,6 +19,7 @@ async def test_workout_set_crud(client, alice):
         "id": workout_set["id"],
         "scheduled_workout_id": workout_id,
         "program_exercise_id": program_exercise_id,
+        "exercise_id": data["exercise"]["id"],
         "set_number": 1,
         "weight": 60,
         "reps": 8,

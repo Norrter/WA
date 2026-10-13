@@ -47,7 +47,8 @@ class ProgramDay(Base):
         order_by="ProgramExercise.order_index",
     )
 
+    # Выполненные тренировки остаются в истории (ON DELETE SET NULL)
     scheduled_workouts: Mapped[list["ScheduledWorkout"]] = relationship(
         back_populates="program_day",
-        cascade="all, delete-orphan",
+        passive_deletes=True,
     )

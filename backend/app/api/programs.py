@@ -1,9 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import or_, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.api.helpers import Pagination, apply_changes, get_owned_program
+from app.api.helpers import (
+    Pagination,
+    apply_changes,
+    drop_unstarted_workouts,
+    get_owned_program,
+    program_access,
+)
 from app.core.dependencies import get_current_user
 from app.database.session import get_session
 from app.models.program import Program
@@ -17,12 +23,22 @@ from app.schemas.program import (
     ProgramResponse,
     ProgramUpdate,
 )
+from app.services.programs import (
+    copy_program_tree,
+    describe_programs,
+    load_program_tree,
+)
 
 
 router = APIRouter(
     prefix="/programs",
     tags=["Programs"],
 )
+
+
+async def described(session: AsyncSession, program: Program, user: User) -> Program:
+    [program] = await describe_programs(session, [program], user)
+    return program
 
 
 @router.post("", response_model=ProgramResponse)
@@ -42,7 +58,7 @@ async def create_program(
     await session.commit()
     await session.refresh(program)
 
-    return program
+    return await described(session, program, current_user)
 
 
 @router.get("", response_model=list[ProgramResponse])
@@ -51,6 +67,7 @@ async def get_programs(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
+    """Свои программы, включая назначенные тренером."""
     result = await session.execute(
         select(Program)
         .where(Program.user_id == current_user.id)
@@ -59,7 +76,7 @@ async def get_programs(
         .offset(pagination.offset)
     )
 
-    return result.scalars().all()
+    return await describe_programs(session, list(result.scalars().all()), current_user)
 
 
 @router.get(
@@ -83,7 +100,7 @@ async def get_program_templates(
         .order_by(Program.id)
     )
 
-    return result.scalars().all()
+    return await describe_programs(session, list(result.scalars().all()), current_user)
 
 
 @router.post(
@@ -96,63 +113,29 @@ async def copy_program(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    """Создать свою копию шаблона (или своей программы)
-    со всеми днями и упражнениями."""
-    result = await session.execute(
-        select(Program)
-        .options(
-            selectinload(Program.days)
-            .selectinload(ProgramDay.exercises)
-        )
-        .where(
-            Program.id == program_id,
-            or_(
-                Program.user_id.is_(None),
-                Program.user_id == current_user.id,
-            ),
-        )
+    """Создать на основе: своя копия шаблона, своей программы или
+    программы от тренера — со всеми днями и упражнениями. Копию
+    можно менять как угодно, с оригиналом она не связана."""
+    source = await load_program_tree(session, program_id)
+
+    readable = source is not None and (
+        source.user_id is None
+        or (await program_access(source, session, current_user))[0]
     )
 
-    source = result.scalar_one_or_none()
-
-    if source is None:
+    if not readable:
         raise HTTPException(
             status_code=404,
             detail="Program not found",
         )
 
-    copy = Program(
-        user_id=current_user.id,
-        name=source.name,
-        description=source.description,
-        days=[
-            ProgramDay(
-                name=day.name,
-                order_index=day.order_index,
-                exercises=[
-                    ProgramExercise(
-                        exercise_id=item.exercise_id,
-                        order_index=item.order_index,
-                        sets=item.sets,
-                        target_reps=item.target_reps,
-                        target_reps_max=item.target_reps_max,
-                        target_weight=item.target_weight,
-                        rest_seconds=item.rest_seconds,
-                        notes=item.notes,
-                    )
-                    for item in day.exercises
-                ],
-            )
-            for day in source.days
-        ],
-    )
-
+    copy = copy_program_tree(source, current_user.id)
     session.add(copy)
 
     await session.commit()
     await session.refresh(copy)
 
-    return copy
+    return await described(session, copy, current_user)
 
 
 @router.get(
@@ -164,28 +147,11 @@ async def get_program(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    result = await session.execute(
-        select(Program)
-        .options(
-            selectinload(Program.days)
-            .selectinload(ProgramDay.exercises)
-            .selectinload(ProgramExercise.exercise)
-        )
-        .where(
-            Program.id == program_id,
-            Program.user_id == current_user.id,
-        )
-    )
+    """Программа целиком. Тренер видит программы своих клиентов."""
+    await get_owned_program(program_id, session, current_user, edit=False)
+    program = await load_program_tree(session, program_id)
 
-    program = result.scalar_one_or_none()
-
-    if program is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Program not found",
-        )
-
-    return program
+    return await described(session, program, current_user)
 
 
 @router.put(
@@ -209,7 +175,7 @@ async def update_program(
     await session.commit()
     await session.refresh(program)
 
-    return program
+    return await described(session, program, current_user)
 
 
 @router.patch(
@@ -233,7 +199,7 @@ async def patch_program(
     await session.commit()
     await session.refresh(program)
 
-    return program
+    return await described(session, program, current_user)
 
 
 @router.delete(
@@ -245,11 +211,15 @@ async def delete_program(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
+    """Удалить программу. Будущие тренировки по ней удаляются,
+    выполненные и пропущенные остаются в истории."""
     program = await get_owned_program(
         program_id,
         session,
         current_user,
     )
+
+    await drop_unstarted_workouts(session, program_id=program.id)
 
     await session.delete(program)
     await session.commit()

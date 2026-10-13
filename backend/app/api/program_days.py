@@ -5,6 +5,7 @@ from sqlalchemy.orm import selectinload
 
 from app.api.helpers import (
     apply_changes,
+    drop_unstarted_workouts,
     get_owned_program,
     get_owned_program_day,
 )
@@ -107,6 +108,7 @@ async def get_program_days(
         program_id,
         session,
         current_user,
+        edit=False,
     )
 
     return await load_days(program_id, session)
@@ -168,6 +170,7 @@ async def get_program_day(
         session,
         current_user,
         with_exercises=True,
+        edit=False,
     )
 
 
@@ -237,6 +240,9 @@ async def delete_program_day(
         session,
         current_user,
     )
+
+    # Выполненные тренировки этого дня остаются в истории
+    await drop_unstarted_workouts(session, day_id=day.id)
 
     await session.delete(day)
     await session.commit()

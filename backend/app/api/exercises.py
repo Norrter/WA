@@ -13,6 +13,7 @@ from app.database.session import get_session
 from app.models.exercise import Exercise
 from app.models.program_exercise import ProgramExercise
 from app.models.user import User
+from app.models.workout_set import WorkoutSet
 from app.schemas.exercise import (
     ExerciseCreate,
     ExercisePatch,
@@ -216,6 +217,17 @@ async def delete_exercise(
         raise HTTPException(
             status_code=409,
             detail="Exercise is used in programs and cannot be deleted",
+        )
+
+    # Подходы по упражнению — история, её не удаляем
+    has_sets = await session.scalar(
+        select(WorkoutSet.id).where(WorkoutSet.exercise_id == exercise_id).limit(1)
+    )
+
+    if has_sets is not None:
+        raise HTTPException(
+            status_code=409,
+            detail="Exercise has logged sets and cannot be deleted",
         )
 
     await session.delete(exercise)

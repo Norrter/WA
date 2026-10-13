@@ -1,4 +1,5 @@
 from app.models.base import Base
+from app.models.coaching import CoachClient, CoachNote
 from app.models.exercise import Exercise
 from app.models.program import Program
 from app.models.program_day import ProgramDay
@@ -9,6 +10,8 @@ from app.models.workout_set import WorkoutSet
 
 __all__ = [
     "Base",
+    "CoachClient",
+    "CoachNote",
     "Exercise",
     "Program",
     "ProgramDay",

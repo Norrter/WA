@@ -11,8 +11,12 @@ async def test_program_crud(client, alice):
     program_id = program["id"]
     assert program == {
         "id": program_id,
+        "user_id": 1,
         "name": "Фулбоди",
         "description": "Описание",
+        "can_edit": True,
+        "assigned_by": None,
+        "source_program_id": None,
     }
 
     response = await client.get("/programs", headers=alice)

@@ -1,5 +1,7 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.helpers import apply_changes
@@ -7,6 +9,7 @@ from app.core.dependencies import get_current_user
 from app.core.roles import role_for_email
 from app.core.security import hash_password, verify_password
 from app.database.session import get_session
+from app.models.coaching import CoachClient, CoachingStatus
 from app.models.user import User
 from app.schemas.user import (
     PasswordChange,
@@ -20,6 +23,37 @@ router = APIRouter(
     prefix="/users",
     tags=["Users"],
 )
+
+
+async def attach_waiting_coach(session: AsyncSession, user: User) -> None:
+    """Если тренер добавил этот email до регистрации, человек сразу
+    становится его клиентом (при условии, что другого тренера нет)."""
+    has_coach = await session.scalar(
+        select(CoachClient.id).where(
+            CoachClient.client_id == user.id,
+            CoachClient.status == CoachingStatus.active.value,
+        )
+    )
+
+    if has_coach is not None:
+        return
+
+    link = await session.scalar(
+        select(CoachClient)
+        .where(
+            CoachClient.client_id.is_(None),
+            CoachClient.status == CoachingStatus.invited.value,
+            func.lower(CoachClient.invited_email) == user.email.lower(),
+        )
+        .order_by(CoachClient.created_at, CoachClient.id)
+        .limit(1)
+    )
+
+    if link is not None:
+        link.client_id = user.id
+        link.status = CoachingStatus.active.value
+        link.responded_at = datetime.now(timezone.utc)
+        await session.flush()
 
 
 async def ensure_email_and_username_free(
@@ -76,6 +110,11 @@ async def create_user(
     )
 
     session.add(user)
+    await session.flush()
+
+    # Тренер мог добавить этот email ещё до регистрации
+    await attach_waiting_coach(session, user)
+
     await session.commit()
     await session.refresh(user)
 
@@ -100,6 +139,9 @@ async def update_me(
 
     # Роль тренера привязана к email
     current_user.role = role_for_email(current_user.email)
+
+    if data.email is not None:
+        await attach_waiting_coach(session, current_user)
 
     await session.commit()
     await session.refresh(current_user)

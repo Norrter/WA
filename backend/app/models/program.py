@@ -25,6 +25,19 @@ class Program(Base):
         nullable=False,
     )
 
+    # Программу назначил тренер: пока сотрудничество активно, менять её
+    # может только он, клиент — смотреть, заниматься и копировать
+    assigned_by_coach_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    # Из какой программы сделана копия
+    source_program_id: Mapped[int | None] = mapped_column(
+        ForeignKey("programs.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
     description: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
@@ -51,9 +64,12 @@ class Program(Base):
 
     user: Mapped["User | None"] = relationship(
         back_populates="programs",
+        foreign_keys=[user_id],
     )
 
+    # Тренировки не удаляются вместе с программой: выполненные остаются
+    # в истории, у них program_id становится пустым (ON DELETE SET NULL)
     scheduled_workouts: Mapped[list["ScheduledWorkout"]] = relationship(
         back_populates="program",
-        cascade="all, delete-orphan",
+        passive_deletes=True,
     )

@@ -16,6 +16,11 @@ CONSTRAINT_MESSAGES = {
     "uq_workout_sets_workout_exercise_set_number": (
         "This set number is already logged for this exercise"
     ),
+    "uq_coach_clients_one_active_coach": "Client already has a coach",
+    "uq_coach_clients_one_pending_invite": "Invitation already sent",
+    "workout_sets_exercise_id_fkey": (
+        "Exercise has logged sets and cannot be deleted"
+    ),
     "program_exercises_exercise_id_fkey": (
         "Exercise is used in programs and cannot be deleted"
     ),

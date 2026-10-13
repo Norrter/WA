@@ -74,7 +74,9 @@ class ProgramExercise(Base):
         back_populates="program_exercises",
     )
 
+    # Подходы остаются в истории (ON DELETE SET NULL),
+    # упражнение у них записано отдельно в exercise_id
     workout_sets: Mapped[list["WorkoutSet"]] = relationship(
         back_populates="program_exercise",
-        cascade="all, delete-orphan",
+        passive_deletes=True,
     )

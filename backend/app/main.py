@@ -5,8 +5,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
+from app.api.admin import router as admin_router
 from app.api.auth import router as auth_router
 from app.api.coach import router as coach_router
+from app.api.coaching import router as coaching_router
 from app.api.exercises import router as exercises_router
 from app.api.program_days import router as program_days_router
 from app.api.program_exercises import router as program_exercises_router
@@ -53,6 +55,8 @@ app.include_router(exercises_router)
 app.include_router(scheduled_workouts_router)
 app.include_router(workout_sets_router)
 app.include_router(coach_router)
+app.include_router(coaching_router)
+app.include_router(admin_router)
 
 
 @app.get("/health")

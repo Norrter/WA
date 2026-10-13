@@ -43,7 +43,9 @@ class WorkoutSetResponse(BaseModel):
 
     id: int
     scheduled_workout_id: int
-    program_exercise_id: int
+    # пусто, если упражнение потом убрали из плана
+    program_exercise_id: int | None
+    exercise_id: int
     set_number: int
     weight: float
     reps: int
