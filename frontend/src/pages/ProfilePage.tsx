@@ -3,6 +3,7 @@ import { useState, type FormEvent } from "react";
 import { users } from "../api";
 import { useScene } from "../components/Scene";
 import { useAuth, useUser } from "../components/Auth";
+import { CoachingSection } from "../components/MyCoach";
 import { useToast } from "../components/Toast";
 import { Button, Field, PageHeader, useConfirm } from "../components/ui";
 
@@ -86,6 +87,8 @@ export function ProfilePage() {
           </div>
         </form>
       </section>
+
+      <CoachingSection />
 
       <section className="block">
         <h2 className="block-title">Пароль</h2>

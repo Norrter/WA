@@ -1,65 +1,40 @@
+// Прогресс: обзор периода, прогресс по упражнениям, сравнение
+// с прошлым периодом, объём, рекорды и история тренировок
+
 import { useState } from "react";
 
-import { exercises as exercisesApi, stats } from "../api";
-import type { ExerciseRecords } from "../api/types";
-import { useScene } from "../components/Scene";
+import { stats, workouts as workoutsApi } from "../api";
 import { BarChart } from "../components/Charts";
+import { PeriodSwitch, periodStart } from "../components/Coaching";
 import { ExerciseProgress } from "../components/ExerciseProgress";
-import { Empty, ErrorNote, Loading, PageHeader } from "../components/ui";
-import { addDays, formatDay, fromISO, startOfWeek, today } from "../lib/dates";
-import { loadProgramDetails } from "../lib/data";
-import { formatNumber, formatWeight, plural } from "../lib/format";
+import { FeedbackLine } from "../components/Feedback";
+import { KeyExercises, OverviewFigures, PeriodComparison } from "../components/Overview";
+import { useScene } from "../components/Scene";
+import { Empty, ErrorNote, Loading, PageHeader, StatusPill } from "../components/ui";
+import { formatDay, formatDayWithWeekday, fromISO, today } from "../lib/dates";
+import { formatNumber, formatWeight } from "../lib/format";
 import { useAsync } from "../lib/useAsync";
-
-const PERIODS = [4, 12, 26];
-
-interface ExerciseRecordRow {
-  id: number;
-  name: string;
-  records: ExerciseRecords;
-}
-
-// Рекорды по всем упражнениям из программ пользователя
-async function loadRecords(): Promise<ExerciseRecordRow[]> {
-  const programs = await loadProgramDetails();
-  const names = new Map<number, string>();
-
-  for (const program of programs) {
-    for (const day of program.days) {
-      for (const item of day.exercises) names.set(item.exercise.id, item.exercise.name);
-    }
-  }
-
-  const rows = await Promise.all(
-    [...names.entries()].map(async ([id, name]) => ({
-      id,
-      name,
-      records: await exercisesApi.records(id),
-    })),
-  );
-
-  // Сначала то, что делали недавно; без подходов — в конце
-  return rows.sort((a, b) =>
-    (b.records.last_performed ?? "").localeCompare(a.records.last_performed ?? "")
-    || a.name.localeCompare(b.name, "ru"),
-  );
-}
 
 export function ProgressPage() {
   useScene("throne");
 
-  const [weeks, setWeeks] = useState(12);
+  const [weeks, setWeeks] = useState(4);
   const [exerciseId, setExerciseId] = useState<number | null>(null);
   const now = today();
-  const from = addDays(startOfWeek(now), -(weeks - 1) * 7);
+  const from = periodStart(weeks);
 
   const period = useAsync(
-    () => Promise.all([stats.summary(from, now), stats.weekly(weeks)]),
-    [weeks, now],
+    () =>
+      Promise.all([
+        stats.overview(from, now),
+        stats.weekly(Math.max(weeks, 8)),
+        workoutsApi.list({ date_from: from, date_to: now }),
+      ]),
+    [from, now, weeks],
   );
-  const recordsState = useAsync(loadRecords, []);
+  const records = useAsync(() => stats.records(), []);
 
-  const error = period.error ?? recordsState.error;
+  const error = period.error ?? records.error;
 
   if (error) {
     return (
@@ -67,60 +42,79 @@ export function ProgressPage() {
         error={error}
         onRetry={() => {
           void period.reload();
-          void recordsState.reload();
+          void records.reload();
         }}
       />
     );
   }
 
-  if (!period.data || !recordsState.data) return <Loading />;
+  if (!period.data || !records.data) return <Loading />;
 
-  const [summary, weekly] = period.data;
-  const rows = recordsState.data;
-  const withData = rows.filter((row) => row.records.total_sets > 0);
-  const selected = exerciseId ?? withData[0]?.id ?? rows[0]?.id ?? null;
-  const selectedRow = rows.find((row) => row.id === selected);
+  const [overview, weekly, list] = period.data;
+  const done = [...list].filter((workout) => workout.status !== "planned").reverse();
+
+  // Упражнение для графика: выбранное, иначе самое частое за период
+  const selected =
+    exerciseId ?? overview.key_exercises[0]?.exercise_id ?? records.data[0]?.exercise_id ?? null;
 
   return (
     <div className="page">
       <PageHeader
         title="Прогресс"
-        actions={
-          <div className="segmented" role="group" aria-label="Период">
-            {PERIODS.map((value) => (
-              <button
-                key={value}
-                type="button"
-                className={weeks === value ? "active" : ""}
-                aria-pressed={weeks === value}
-                onClick={() => setWeeks(value)}
-              >
-                {value} {plural(value, "неделя", "недели", "недель")}
-              </button>
-            ))}
-          </div>
-        }
+        subtitle={`С ${formatDay(from)} по сегодня`}
+        actions={<PeriodSwitch weeks={weeks} onChange={setWeeks} />}
       />
 
       <div className={period.loading ? "is-refreshing" : ""}>
-        <dl className="figures">
-          <div>
-            <dt>Тренировок выполнено</dt>
-            <dd>{summary.workouts_completed}</dd>
+        <section aria-label="Обзор">
+          <OverviewFigures overview={overview} />
+        </section>
+
+        <section className="block" aria-labelledby="exercise-progress-title">
+          <div className="block-head">
+            <h2 className="block-title" id="exercise-progress-title">Прогресс по упражнениям</h2>
+            {records.data.length > 0 && (
+              <select
+                aria-label="Упражнение"
+                value={selected ?? ""}
+                onChange={(event) => setExerciseId(Number(event.target.value))}
+              >
+                {records.data.map((record) => (
+                  <option key={record.exercise_id} value={record.exercise_id}>
+                    {record.exercise_name}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
-          <div>
-            <dt>Пропущено</dt>
-            <dd>{summary.workouts_skipped}</dd>
-          </div>
-          <div>
-            <dt>Подходов</dt>
-            <dd>{summary.total_sets}</dd>
-          </div>
-          <div>
-            <dt>Поднято</dt>
-            <dd>{formatNumber(summary.total_volume)} кг</dd>
-          </div>
-        </dl>
+          {selected === null ? (
+            <Empty title="Пока нет выполненных подходов">
+              <p className="muted">Запишите подходы на экране тренировки — здесь появится график.</p>
+            </Empty>
+          ) : (
+            <ExerciseProgress key={selected} exerciseId={selected} since={from} />
+          )}
+        </section>
+
+        <section className="block" aria-labelledby="key-title">
+          <h2 className="block-title" id="key-title">Ключевые упражнения</h2>
+          <p className="muted small">
+            Лучший расчётный максимум на 1 повтор за период и за такой же период до него.
+          </p>
+          <KeyExercises
+            items={overview.key_exercises}
+            selectedId={selected}
+            onSelect={(id) => {
+              setExerciseId(id);
+              document.getElementById("exercise-progress-title")?.scrollIntoView({ behavior: "smooth" });
+            }}
+          />
+        </section>
+
+        <section className="block" aria-labelledby="compare-title">
+          <h2 className="block-title" id="compare-title">Сравнение с прошлым периодом</h2>
+          <PeriodComparison overview={overview} />
+        </section>
 
         <section className="block">
           <h2 className="block-title">Объём по неделям, кг</h2>
@@ -138,13 +132,38 @@ export function ProgressPage() {
             })}
           />
         </section>
+
+        <section className="block">
+          <div className="block-head">
+            <h2 className="block-title">Тренировки за период</h2>
+            <a className="link-quiet" href="#/schedule">Календарь</a>
+          </div>
+          {done.length === 0 ? (
+            <p className="muted">За этот период выполненных и пропущенных тренировок нет.</p>
+          ) : (
+            <ul className="rows">
+              {done.map((workout) => (
+                <li key={workout.id}>
+                  <a className="row-link" href={`#/workouts/${workout.id}`}>
+                    <span className="row-date">{formatDayWithWeekday(workout.scheduled_date)}</span>
+                    <span className="row-main">
+                      {workout.day_name ?? "Тренировка"}
+                      <FeedbackLine feedback={workout} />
+                    </span>
+                    <StatusPill status={workout.status} />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </div>
 
       <section className="block">
         <h2 className="block-title">Рекорды</h2>
-        {rows.length === 0 ? (
-          <Empty title="Добавьте упражнения в программу">
-            <p className="muted">Здесь появятся рекорды по упражнениям из ваших программ.</p>
+        {records.data.length === 0 ? (
+          <Empty title="Рекордов пока нет">
+            <p className="muted">Они появятся после первых выполненных подходов.</p>
           </Empty>
         ) : (
           <table className="records stack">
@@ -157,29 +176,40 @@ export function ProgressPage() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
+              {records.data.map((record) => (
                 <tr
-                  key={row.id}
-                  className={`selectable ${row.id === selected ? "selected" : ""}`}
-                  onClick={() => setExerciseId(row.id)}
+                  key={record.exercise_id}
+                  className={`selectable ${record.exercise_id === selected ? "selected" : ""}`}
+                  onClick={() => setExerciseId(record.exercise_id)}
                 >
                   <td>
                     <button
                       type="button"
-                      aria-pressed={row.id === selected}
-                      onClick={() => setExerciseId(row.id)}
+                      aria-pressed={record.exercise_id === selected}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setExerciseId(record.exercise_id);
+                        document
+                          .getElementById("exercise-progress-title")
+                          ?.scrollIntoView({ behavior: "smooth" });
+                      }}
                     >
-                      {row.name}
+                      {record.exercise_name}
                     </button>
+                    {record.muscle_group && (
+                      <span className="athlete-email">{record.muscle_group}</span>
+                    )}
                   </td>
                   <td className="num" data-label="Макс. вес">
-                    {row.records.max_weight
-                      ? `${formatWeight(row.records.max_weight.weight)} × ${row.records.max_weight.reps}`
+                    {record.max_weight
+                      ? `${formatWeight(record.max_weight.weight)} × ${record.max_weight.reps}`
                       : "—"}
                   </td>
-                  <td className="num" data-label="На 1 повтор">{formatWeight(row.records.best_estimated_1rm)}</td>
+                  <td className="num" data-label="На 1 повтор">
+                    {formatWeight(record.best_estimated_1rm)}
+                  </td>
                   <td className="hide-mobile muted">
-                    {row.records.last_performed ? formatDay(row.records.last_performed) : "—"}
+                    {record.last_performed ? formatDay(record.last_performed) : "—"}
                   </td>
                 </tr>
               ))}
@@ -187,13 +217,6 @@ export function ProgressPage() {
           </table>
         )}
       </section>
-
-      {selectedRow && (
-        <section className="block">
-          <h2 className="block-title">{selectedRow.name}</h2>
-          <ExerciseProgress exerciseId={selectedRow.id} />
-        </section>
-      )}
     </div>
   );
 }

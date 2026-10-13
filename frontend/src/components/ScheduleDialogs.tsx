@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 
 import { workouts } from "../api";
-import type { ProgramDetail } from "../api/types";
+import type { ProgramDetail, ScheduleInput } from "../api/types";
 import { WEEKDAYS_SHORT, today } from "../lib/dates";
 import { plural } from "../lib/format";
 import { useToast } from "./Toast";
@@ -98,11 +98,15 @@ export function AutoPlanDialog({
   programId: initialProgramId,
   onClose,
   onDone,
+  generate,
 }: {
   programs: ProgramDetail[];
   programId?: number;
   onClose: () => void;
   onDone: () => void;
+  // Своя раскладка, например тренер раскладывает программу клиента.
+  // Возвращает, сколько тренировок создано
+  generate?: (programId: number, schedule: ScheduleInput) => Promise<number>;
 }) {
   const toast = useToast();
   const usable = programs.filter((program) => program.days.length > 0);
@@ -124,16 +128,14 @@ export function AutoPlanDialog({
     setBusy(true);
 
     try {
-      const created = await workouts.generate({
-        program_id: programId,
-        start_date: startDate,
-        weeks,
-        weekdays,
-      });
+      const schedule = { start_date: startDate, weeks, weekdays };
+      const created = generate
+        ? await generate(programId, schedule)
+        : (await workouts.generate({ program_id: programId, ...schedule })).length;
       toast.success(
-        created.length === 0
+        created === 0
           ? "Новых тренировок нет: эти даты уже заняты"
-          : `Запланировано ${created.length} ${plural(created.length, "тренировка", "тренировки", "тренировок")}`,
+          : `Запланировано ${created} ${plural(created, "тренировка", "тренировки", "тренировок")}`,
       );
       onDone();
     } catch (error) {

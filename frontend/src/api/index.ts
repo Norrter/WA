@@ -2,19 +2,27 @@
 
 import { query, request } from "./client";
 import type {
+  AdminRow,
+  AdminStats,
+  AdminTable,
+  CoachClientCard,
+  CoachClientLink,
   CoachExerciseRecords,
-  CoachUser,
+  CoachingState,
+  CoachNote,
   CoachWorkout,
   Exercise,
   ExerciseInput,
   ExerciseRecords,
   HistoryItem,
+  PeriodOverview,
   Program,
   ProgramDay,
   ProgramDetail,
   ProgramExercise,
   ProgramExerciseInput,
   ScheduledWorkout,
+  ScheduleInput,
   StatsSummary,
   Tokens,
   User,
@@ -116,8 +124,16 @@ export const workouts = {
     weeks: number;
     weekdays: number[];
   }) => request<ScheduledWorkout[]>("POST", "/scheduled-workouts/generate", data),
-  patch: (id: number, data: { status?: WorkoutStatus; scheduled_date?: string }) =>
-    request<ScheduledWorkout>("PATCH", `/scheduled-workouts/${id}`, data),
+  patch: (
+    id: number,
+    data: {
+      status?: WorkoutStatus;
+      scheduled_date?: string;
+      wellbeing?: number | null;
+      difficulty?: number | null;
+      feedback_comment?: string | null;
+    },
+  ) => request<ScheduledWorkout>("PATCH", `/scheduled-workouts/${id}`, data),
   remove: (id: number) => request<void>("DELETE", `/scheduled-workouts/${id}`),
 
   addSet: (
@@ -131,29 +147,103 @@ export const workouts = {
 };
 
 export const stats = {
+  // рекорды по всем упражнениям, которые делал пользователь
+  records: () => request<CoachExerciseRecords[]>("GET", "/stats/records"),
+  // обзор за период и за такой же период перед ним
+  overview: (date_from: string, date_to: string) =>
+    request<PeriodOverview>("GET", `/stats/overview${query({ date_from, date_to })}`),
   summary: (date_from: string, date_to: string) =>
     request<StatsSummary>("GET", `/stats/summary${query({ date_from, date_to })}`),
   weekly: (weeks: number) =>
     request<WeeklyVolume[]>("GET", `/stats/weekly-volume${query({ weeks })}`),
 };
 
-// Кабинет тренера: только чтение, доступно пользователям с ролью coach
+// Кабинет тренера: видит только своих активных клиентов, данные не меняет
 export const coach = {
-  users: (date_from: string, date_to: string) =>
-    request<CoachUser[]>("GET", `/coach/users${query({ date_from, date_to })}`),
-  user: (id: number) => request<User>("GET", `/coach/users/${id}`),
-  summary: (id: number, date_from: string, date_to: string) =>
-    request<StatsSummary>(
-      "GET",
-      `/coach/users/${id}/summary${query({ date_from, date_to })}`,
-    ),
+  clients: (date_from: string, date_to: string) =>
+    request<CoachClientLink[]>("GET", `/coach/clients${query({ date_from, date_to })}`),
+  invite: (email: string) => request<CoachClientLink>("POST", "/coach/clients", { email }),
+  cancelInvitation: (linkId: number) =>
+    request<void>("DELETE", `/coach/invitations/${linkId}`),
+  end: (clientId: number) =>
+    request<CoachClientLink>("POST", `/coach/clients/${clientId}/end`),
+
+  card: (id: number, date_from: string, date_to: string) =>
+    request<CoachClientCard>("GET", `/coach/clients/${id}${query({ date_from, date_to })}`),
   weekly: (id: number, weeks: number) =>
-    request<WeeklyVolume[]>("GET", `/coach/users/${id}/weekly-volume${query({ weeks })}`),
+    request<WeeklyVolume[]>("GET", `/coach/clients/${id}/weekly-volume${query({ weeks })}`),
   records: (id: number) =>
-    request<CoachExerciseRecords[]>("GET", `/coach/users/${id}/records`),
-  workouts: (id: number, date_from: string, date_to: string, limit = 15) =>
-    request<CoachWorkout[]>(
+    request<CoachExerciseRecords[]>("GET", `/coach/clients/${id}/records`),
+  workouts: (
+    id: number,
+    params: { date_from?: string; date_to?: string; limit?: number; order?: "asc" | "desc" },
+  ) =>
+    request<CoachWorkout[]>("GET", `/coach/clients/${id}/workouts${query({ limit: 15, ...params })}`),
+  overview: (id: number, date_from: string, date_to: string) =>
+    request<PeriodOverview>(
       "GET",
-      `/coach/users/${id}/workouts${query({ date_from, date_to, limit })}`,
+      `/coach/clients/${id}/overview${query({ date_from, date_to })}`,
     ),
+  exerciseHistory: (id: number, exerciseId: number, limit = 200) =>
+    request<HistoryItem[]>(
+      "GET",
+      `/coach/clients/${id}/exercises/${exerciseId}/history${query({ limit })}`,
+    ),
+
+  programs: (id: number) => request<Program[]>("GET", `/coach/clients/${id}/programs`),
+  assign: (id: number, program_id: number, schedule: ScheduleInput | null) =>
+    request<{ program_id: number; workouts_created: number }>(
+      "POST",
+      `/coach/clients/${id}/programs`,
+      { program_id, schedule },
+    ),
+  schedule: (id: number, programId: number, schedule: ScheduleInput) =>
+    request<{ program_id: number; workouts_created: number }>(
+      "POST",
+      `/coach/clients/${id}/programs/${programId}/schedule`,
+      schedule,
+    ),
+
+  notes: (id: number) => request<CoachNote[]>("GET", `/coach/clients/${id}/notes`),
+  addNote: (id: number, text: string) =>
+    request<CoachNote>("POST", `/coach/clients/${id}/notes`, { text }),
+  updateNote: (noteId: number, text: string) =>
+    request<CoachNote>("PATCH", `/coach/notes/${noteId}`, { text }),
+  removeNote: (noteId: number) => request<void>("DELETE", `/coach/notes/${noteId}`),
+};
+
+// Тренер глазами клиента: приглашения и текущий тренер
+export const coaching = {
+  state: () => request<CoachingState>("GET", "/coaching"),
+  end: () => request<CoachingState>("POST", "/coaching/end"),
+};
+
+// Админ-панель: любые данные любой таблицы (ADMIN_EMAILS)
+export const admin = {
+  stats: () => request<AdminStats>("GET", "/admin/stats"),
+  tables: () => request<AdminTable[]>("GET", "/admin/tables"),
+  rows: (
+    table: string,
+    params: {
+      q?: string;
+      field?: string;
+      value?: string | number;
+      limit?: number;
+      offset?: number;
+      sort?: string;
+      order?: "asc" | "desc";
+    },
+  ) =>
+    request<{ total: number; rows: AdminRow[] }>(
+      "GET",
+      `/admin/tables/${table}/rows${query(params)}`,
+    ),
+  row: (table: string, id: number) =>
+    request<AdminRow>("GET", `/admin/tables/${table}/rows/${id}`),
+  create: (table: string, values: AdminRow) =>
+    request<AdminRow>("POST", `/admin/tables/${table}/rows`, values),
+  update: (table: string, id: number, values: AdminRow) =>
+    request<AdminRow>("PATCH", `/admin/tables/${table}/rows/${id}`, values),
+  remove: (table: string, id: number) =>
+    request<void>("DELETE", `/admin/tables/${table}/rows/${id}`),
 };

@@ -39,6 +39,31 @@ export function onSessionExpired(listener: Listener): () => void {
   return () => expiredListeners.delete(listener);
 }
 
+// Сообщения бэкенда, которые видит человек, — по-русски
+const DETAIL_RU: Record<string, string> = {
+  "Invalid email or password": "Неверный email или пароль",
+  "Email already registered": "Этот email уже зарегистрирован",
+  "Username already registered": "Это имя пользователя уже занято",
+  "Current password is incorrect": "Текущий пароль указан неверно",
+  "Client already has a coach": "У этого человека уже есть тренер",
+  "Already your client": "Этот человек уже ваш клиент",
+  "Invitation already sent": "Этот email уже добавлен и ждёт регистрации",
+  "You cannot invite yourself": "Нельзя добавить клиентом самого себя",
+  "Invitation is already answered": "Человек уже зарегистрирован — завершите сотрудничество в его карточке",
+  "Invitation not found": "Запись не найдена",
+  "Client not found": "Клиент не найден или сотрудничество завершено",
+  "Admin access required": "Нужны права администратора",
+  "You cannot delete your own account here": "Свой аккаунт здесь удалить нельзя",
+  "Row not found": "Запись не найдена",
+  "Exercise has logged sets and cannot be deleted":
+    "По этому упражнению есть записанные подходы, удалить его нельзя",
+  "Exercise is used in programs and cannot be deleted":
+    "Упражнение есть в программах, удалить его нельзя",
+  "Program is managed by your coach": "Эту программу ведёт тренер, менять её может только он",
+  "Program is read-only": "Эту программу менять нельзя",
+  "Conflict with existing data": "Конфликт с другими данными: проверьте связи и уникальные поля",
+};
+
 // Превратить ответ FastAPI с ошибкой в понятный текст
 function errorMessage(status: number, data: unknown): string {
   const detail = (data as { detail?: unknown } | null)?.detail;
@@ -53,7 +78,7 @@ function errorMessage(status: number, data: unknown): string {
   }
 
   if (typeof detail === "string") {
-    return detail;
+    return DETAIL_RU[detail] ?? detail;
   }
 
   return `Ошибка ${status}`;

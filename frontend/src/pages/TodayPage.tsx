@@ -16,6 +16,7 @@ import { loadProgramDetails } from "../lib/data";
 import { formatNumber, formatReps, formatWeight } from "../lib/format";
 import { navigate } from "../lib/router";
 import { useAsync } from "../lib/useAsync";
+import { workoutNames } from "../lib/workouts";
 
 export function TodayPage() {
   useScene("olympus");
@@ -50,10 +51,7 @@ export function TodayPage() {
     <div className="today">
       <SceneSection scene="olympus" className="hero" labelledBy="hero-title">
         {next ? (
-          <NextWorkout
-            workout={next}
-            program={programById.get(next.program_id)}
-          />
+          <NextWorkout workout={next} programs={programById} />
         ) : (
           <>
             <p className="eyebrow">{user.username}, добро пожаловать</p>
@@ -112,12 +110,12 @@ export function TodayPage() {
 
 function NextWorkout({
   workout,
-  program,
+  programs,
 }: {
   workout: ScheduledWorkout;
-  program?: ProgramDetail;
+  programs: Map<number, ProgramDetail>;
 }) {
-  const day = program?.days.find((item) => item.id === workout.program_day_id);
+  const { day, dayName, programName } = workoutNames(workout, programs);
   const isToday = workout.scheduled_date === today();
   const when = relativeDay(workout.scheduled_date);
 
@@ -126,8 +124,8 @@ function NextWorkout({
       <p className="eyebrow">
         {isToday ? `Сегодня, ${formatDayWithWeekday(workout.scheduled_date)}` : when}
       </p>
-      <h1 id="hero-title" className="hero-title">{day?.name ?? "Тренировка"}</h1>
-      {program && <p className="hero-lead">{program.name}</p>}
+      <h1 id="hero-title" className="hero-title">{dayName}</h1>
+      {programName && <p className="hero-lead">{programName}</p>}
 
       {day && day.exercises.length > 0 && (
         <ol className="hero-plan">
@@ -177,9 +175,7 @@ function WeekStrip({
             <span className="week-name">{weekday}</span>
             <span className="week-number">{fromISO(date).getDate()}</span>
             {dayWorkouts.map((workout) => {
-              const day = programs
-                .get(workout.program_id)
-                ?.days.find((item) => item.id === workout.program_day_id);
+              const { dayName } = workoutNames(workout, programs);
 
               return (
                 <a
@@ -187,7 +183,7 @@ function WeekStrip({
                   href={`#/workouts/${workout.id}`}
                   className={`week-workout status-${workout.status}`}
                 >
-                  <span className="week-workout-name">{day?.name ?? "Тренировка"}</span>
+                  <span className="week-workout-name">{dayName}</span>
                   <StatusPill status={workout.status} />
                 </a>
               );

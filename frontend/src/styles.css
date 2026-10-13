@@ -8,25 +8,34 @@
    ===================================================================== */
 
 :root {
-  /* палитра */
-  --black: #0b0a09;
+  /* палитра: тёмный камень и тёплая бронза */
+  --black: #12100d;
   --charcoal: #151412;
   --graphite: #201e1a;
   --marble: #c7c0b3;
   --ivory: #e8e0d2;
-  --gold: #9e865a;
-  --gold-light: #b9a073;
+  --gold: #c08a3e;
+  --gold-light: #d9a95c;
 
   --text: var(--ivory);
-  --text-soft: rgb(232 224 210 / 0.62);
-  --text-faint: rgb(232 224 210 / 0.4);
+  --text-soft: rgb(232 224 210 / 0.8);
+  --text-faint: rgb(232 224 210 / 0.6);
 
-  --line: rgb(199 192 179 / 0.14);
-  --line-strong: rgb(199 192 179 / 0.28);
+  --line: rgb(199 192 179 / 0.24);
+  --line-strong: rgb(199 192 179 / 0.45);
 
-  /* полупрозрачная поверхность поверх сцены */
-  --veil: rgb(21 20 18 / 0.72);
-  --veil-strong: rgb(16 15 13 / 0.9);
+  /* плотные поверхности поверх сцены (без эффекта стекла) */
+  --surface: #1c1813;
+  --surface-2: #241f18;
+  --field: #15120e;
+  --veil: var(--surface);
+  --veil-strong: #121009;
+
+  /* главные кнопки и активные элементы */
+  --accent: #c08a3e;
+  --accent-light: #d9a95c;
+  --accent-soft: rgb(192 138 62 / 0.22);
+  --on-accent: #1a130a;
 
   --danger: #b5705d;
 
@@ -39,8 +48,8 @@
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
 
   /* скругления: кнопки — капсулы, поля и панели — мягкие углы */
-  --radius-field: 12px;
-  --radius-panel: 18px;
+  --radius-field: 14px;
+  --radius-panel: 22px;
 
   color-scheme: dark;
 }
@@ -110,7 +119,7 @@ textarea {
 }
 
 ::selection {
-  background: rgb(158 134 90 / 0.4);
+  background: rgb(192 138 62 / 0.4);
   color: var(--ivory);
 }
 
@@ -286,8 +295,6 @@ textarea {
    не просвечивал под навигацией */
 .topbar.scrolled {
   background: rgb(11 10 9 / 0.9);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
   border-bottom-color: var(--line);
 }
 
@@ -593,17 +600,17 @@ textarea {
 
 .btn-primary {
   border-color: var(--gold);
-  background: rgb(158 134 90 / 0.14);
+  background: rgb(192 138 62 / 0.14);
   color: var(--ivory);
 }
 
 .btn-primary:not(:disabled):hover {
   border-color: var(--gold-light);
-  background: rgb(158 134 90 / 0.3);
+  background: rgb(192 138 62 / 0.3);
 }
 
 .btn-primary:not(:disabled):active {
-  background: rgb(158 134 90 / 0.4);
+  background: rgb(192 138 62 / 0.4);
 }
 
 .btn-secondary {
@@ -1117,7 +1124,7 @@ textarea {
 }
 
 .week-day.is-today {
-  background: rgb(158 134 90 / 0.1);
+  background: rgb(192 138 62 / 0.1);
   box-shadow: inset 0 1px 0 var(--gold);
 }
 
@@ -1245,8 +1252,6 @@ textarea {
 
 .wx-active {
   background: var(--veil);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
   box-shadow: inset 1px 0 0 var(--gold);
 }
 
@@ -1372,7 +1377,7 @@ textarea {
 
 .set-check.on {
   border-color: var(--gold);
-  background: rgb(158 134 90 / 0.25);
+  background: rgb(192 138 62 / 0.25);
   color: var(--ivory);
 }
 
@@ -1568,8 +1573,6 @@ textarea {
   overflow: hidden;
   border: 1px solid var(--gold);
   background: var(--veil-strong);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
   color: var(--ivory);
   transform: translateX(-50%);
   animation: rest-in 0.5s var(--ease);
@@ -1609,7 +1612,7 @@ textarea {
 }
 
 .rest-done {
-  background: rgb(158 134 90 / 0.35);
+  background: rgb(192 138 62 / 0.35);
 }
 
 @media (max-width: 600px) {
@@ -1649,8 +1652,6 @@ textarea {
   border-top: 1px solid var(--line);
   border-left: 1px solid var(--line);
   background: rgb(11 10 9 / 0.5);
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
 }
 
 .calendar-weekday,
@@ -1708,7 +1709,7 @@ textarea {
 
 .calendar-cell.is-today {
   box-shadow: inset 0 1px 0 var(--gold);
-  background: rgb(158 134 90 / 0.08);
+  background: rgb(192 138 62 / 0.08);
 }
 
 .calendar-cell.is-today .calendar-date {
@@ -1798,7 +1799,7 @@ textarea {
 .row-link:hover {
   padding-left: 12px;
   color: var(--ivory);
-  background: linear-gradient(90deg, rgb(158 134 90 / 0.1), transparent 70%);
+  background: linear-gradient(90deg, rgb(192 138 62 / 0.1), transparent 70%);
 }
 
 .row-date {
@@ -1853,7 +1854,7 @@ textarea {
 .program-card:hover {
   padding-left: 14px;
   color: var(--ivory);
-  background: linear-gradient(90deg, rgb(158 134 90 / 0.1), transparent 70%);
+  background: linear-gradient(90deg, rgb(192 138 62 / 0.1), transparent 70%);
 }
 
 .program-name {
@@ -1927,8 +1928,6 @@ textarea {
   padding: 22px 22px 20px;
   border: 1px solid var(--line);
   background: var(--veil);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
 }
 
 .day-head {
@@ -2099,7 +2098,7 @@ textarea {
 }
 
 .records tr.selected td {
-  background: linear-gradient(90deg, rgb(158 134 90 / 0.14), transparent);
+  background: linear-gradient(90deg, rgb(192 138 62 / 0.14), transparent);
 }
 
 .records button {
@@ -2220,8 +2219,6 @@ textarea {
   place-items: center;
   padding: 16px;
   background: rgb(11 10 9 / 0.78);
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
   animation: fade-in 0.3s var(--ease);
 }
 
@@ -2277,8 +2274,6 @@ textarea {
   border: 1px solid var(--line-strong);
   border-left: 1px solid var(--gold);
   background: var(--veil-strong);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
   white-space: pre-line;
   animation: rise 0.45s var(--ease);
 }
@@ -2484,6 +2479,849 @@ textarea {
   }
 }
 
+/* Метки клиентов: «По плану», «Проверить», «Оценить прогресс» */
+
+.flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font: 500 10.5px/1 var(--font-ui);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.flag::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.flag-on_track {
+  color: var(--gold-light);
+  border-color: rgb(217 169 92 / 0.5);
+}
+
+.flag-check {
+  color: var(--danger);
+  border-color: rgb(181 112 93 / 0.55);
+  background: rgb(181 112 93 / 0.08);
+}
+
+.flag-progress {
+  color: var(--marble);
+  border-color: rgb(199 192 179 / 0.4);
+}
+
+.figure-alert dd {
+  color: var(--danger);
+}
+
+/* Список клиентов */
+
+.clients {
+  border-top: 1px solid var(--line);
+}
+
+.client-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 150px;
+  align-items: center;
+  gap: 24px;
+  padding: 18px 6px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ivory);
+  text-decoration: none;
+  transition: padding-left 0.4s var(--ease), background-color 0.4s var(--ease);
+}
+
+.client-row:hover {
+  padding-left: 14px;
+  color: var(--ivory);
+  background: linear-gradient(90deg, rgb(192 138 62 / 0.1), transparent 70%);
+}
+
+.client-row .flag {
+  justify-self: end;
+}
+
+.client-main {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.client-name {
+  font: 500 24px/1.15 var(--font-display);
+  overflow-wrap: anywhere;
+}
+
+.client-meta {
+  font-size: 14px;
+  color: var(--text-soft);
+}
+
+.client-reasons {
+  color: var(--text-faint);
+}
+
+.flag-row-check .client-reasons {
+  color: rgb(181 112 93 / 0.85);
+}
+
+.client-figure {
+  display: grid;
+  justify-items: end;
+}
+
+.client-percent {
+  font: 500 30px/1 var(--font-display);
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.client-percent-label {
+  font: 500 10px/1.6 var(--font-ui);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+/* Приглашение клиента */
+
+.invite-form {
+  display: flex;
+  gap: 12px;
+  max-width: 560px;
+  margin-bottom: 10px;
+}
+
+.invite-form input {
+  flex: 1;
+  min-width: 0;
+}
+
+.invite-row .btn {
+  flex-shrink: 0;
+}
+
+.invite-status {
+  font: 500 11px/1 var(--font-ui);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold-light);
+  white-space: nowrap;
+}
+
+.invite-status.is-declined {
+  color: var(--text-faint);
+}
+
+/* Карточка клиента */
+
+.client-alert {
+  margin: -16px 0 28px;
+  padding-left: 14px;
+  border-left: 1px solid var(--danger);
+  color: var(--marble);
+}
+
+.figures-card {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.figures-card > div:nth-child(3n + 1) {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.figures-card > div:nth-child(n + 4) {
+  border-top: 1px solid var(--line);
+}
+
+.figures dd.figure-text {
+  font-size: 30px;
+  line-height: 1.1;
+}
+
+.figures dd.figure-note {
+  margin-top: 6px;
+  font: 400 13px/1.3 var(--font-ui);
+  color: var(--text-soft);
+}
+
+/* Заметки тренера */
+
+.notes .muted.small {
+  margin: -8px 0 16px;
+}
+
+.note-form {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+}
+
+.note-list {
+  margin-top: 24px;
+  border-top: 1px solid var(--line);
+}
+
+.note {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.note-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.note-date {
+  font: 500 11px/1 var(--font-ui);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gold-light);
+}
+
+.note-tools {
+  display: flex;
+  gap: 2px;
+}
+
+.note-text {
+  margin-top: 6px;
+  white-space: pre-line;
+  color: var(--marble);
+}
+
+.note-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Тренер в профиле клиента */
+
+.coaching-current,
+.invitation {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+}
+
+.invitations {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.invitation {
+  padding: 18px 20px;
+  border: 1px solid rgb(192 138 62 / 0.45);
+  border-radius: var(--radius-panel);
+  background: var(--veil);
+}
+
+.invitation-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* Полоса приглашения на главной */
+
+.invite-banner {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  max-width: 720px;
+  margin-bottom: 28px;
+  padding: 14px 20px;
+  border: 1px solid rgb(192 138 62 / 0.5);
+  border-radius: 999px;
+  background: var(--veil-strong);
+  color: var(--ivory);
+  text-decoration: none;
+  animation: fade-in 0.6s var(--ease) backwards;
+}
+
+.invite-banner .eyebrow {
+  margin: 0;
+}
+
+.invite-banner-text {
+  flex: 1;
+}
+
+.invite-banner-action {
+  font: 500 11.5px/1 var(--font-ui);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold-light);
+}
+
+.invite-banner:hover {
+  border-color: var(--gold-light);
+  color: var(--ivory);
+}
+
+@media (max-width: 760px) {
+  .client-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px 16px;
+  }
+
+  .client-row .flag {
+    grid-column: 1;
+    justify-self: start;
+  }
+
+  .client-figure {
+    grid-row: 1 / span 2;
+    grid-column: 2;
+  }
+
+  .figures-card {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .figures-card > div:nth-child(n) {
+    padding-left: 20px;
+    border-left: 1px solid var(--line);
+    border-top: 0;
+  }
+
+  .figures-card > div:nth-child(odd) {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .figures-card > div:nth-child(n + 3) {
+    border-top: 1px solid var(--line);
+  }
+}
+
+@media (max-width: 600px) {
+  .client-name {
+    font-size: 21px;
+  }
+
+  .client-percent {
+    font-size: 26px;
+  }
+
+  .invite-form {
+    flex-direction: column;
+  }
+
+  .invite-form .btn,
+  .note-form .btn,
+  .invitation-actions .btn {
+    width: 100%;
+  }
+
+  .invitation-actions {
+    width: 100%;
+  }
+
+  .invitation-actions .btn {
+    flex: 1;
+  }
+
+  .note-form {
+    justify-items: stretch;
+  }
+
+  .note-actions .btn {
+    flex: 1;
+  }
+
+  .figures dd.figure-text {
+    font-size: 24px;
+  }
+
+  .invite-banner {
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    border-radius: var(--radius-panel);
+  }
+
+  .invite-banner-text {
+    flex-basis: 100%;
+    order: 2;
+  }
+
+  .invite-banner-action {
+    order: 3;
+    margin-top: 6px;
+  }
+}
+
+/* =====================================================================
+   Прогресс, сравнение периодов, оценки, программы тренера
+   ===================================================================== */
+
+.trend-up {
+  color: var(--gold-light) !important;
+}
+
+.trend-down {
+  color: var(--danger) !important;
+}
+
+.overview-figures {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.client-status {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  margin: -12px 0 32px;
+  padding: 14px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--veil);
+}
+
+.client-status.flag-row-check {
+  border-color: rgb(181 112 93 / 0.45);
+}
+
+.client-status-label {
+  font: 500 11px/1 var(--font-ui);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+}
+
+.client-status-text {
+  color: var(--marble);
+}
+
+.comparison {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.comparison th,
+.comparison td {
+  padding: 12px 10px 12px 0;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: baseline;
+}
+
+.comparison thead th {
+  font: 500 11px/1.3 var(--font-ui);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+}
+
+.comparison tbody th {
+  font: 400 15px/1.3 var(--font-ui);
+  color: var(--marble);
+}
+
+.comparison .num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.comparison td.num {
+  font: 500 20px/1.2 var(--font-display);
+}
+
+.comparison td.num.muted {
+  color: var(--text-soft);
+}
+
+.comparison-dates {
+  display: block;
+  margin-top: 4px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: none;
+  color: var(--text-faint);
+}
+
+.block-head select {
+  min-width: 220px;
+}
+
+.exercise-progress .block-head {
+  flex-wrap: wrap;
+}
+
+.key-exercises + .exercise-progress {
+  margin-top: 28px;
+}
+
+.link-quiet {
+  font: 500 11.5px/1 var(--font-ui);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold-light);
+  text-decoration: none;
+}
+
+/* Оценка тренировки */
+
+.workout-feedback {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-top: 28px;
+  padding: 14px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--veil);
+}
+
+.workout-feedback .eyebrow {
+  margin: 0;
+}
+
+.feedback-line {
+  display: block;
+  margin-top: 4px;
+  font: 400 13px/1.4 var(--font-ui);
+  color: var(--gold-light);
+}
+
+.feedback-comment {
+  display: block;
+  font-style: italic;
+  color: var(--text-soft);
+}
+
+.workout-feedback .feedback-line {
+  margin: 0;
+  font-size: 15px;
+}
+
+.scale {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.scale-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.scale-option {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  background: transparent;
+  font: 500 17px/1 var(--font-display);
+  color: var(--marble);
+  cursor: pointer;
+  transition: all 0.25s var(--ease);
+}
+
+.scale-option:hover {
+  border-color: var(--marble);
+  color: var(--ivory);
+}
+
+.scale-option.active {
+  border-color: var(--gold);
+  background: rgb(192 138 62 / 0.3);
+  color: var(--ivory);
+}
+
+/* Программы тренера */
+
+.program-note {
+  max-width: 64ch;
+  margin: -12px 0 28px;
+  padding-left: 14px;
+  border-left: 1px solid var(--gold);
+  color: var(--marble);
+}
+
+.program-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.program-coach {
+  margin: 0;
+}
+
+.coach-templates {
+  margin-top: 18px;
+  color: var(--text-soft);
+}
+
+@media (max-width: 760px) {
+  .overview-figures {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .overview-figures > div:nth-child(n) {
+    padding-left: 20px;
+    border-left: 1px solid var(--line);
+    border-top: 0;
+  }
+
+  .overview-figures > div:nth-child(odd) {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .overview-figures > div:nth-child(n + 3) {
+    border-top: 1px solid var(--line);
+  }
+}
+
+@media (max-width: 600px) {
+  .block-head {
+    flex-wrap: wrap;
+  }
+
+  .block-head select {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+  }
+
+  .exercise-progress .segmented {
+    width: 100%;
+    gap: 14px;
+  }
+
+  .exercise-progress .segmented button {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+  }
+
+  .records.stack.key-exercises tr {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  .comparison tbody th {
+    font-size: 13px;
+  }
+
+  .comparison td.num {
+    font-size: 17px;
+  }
+
+  .scale-option {
+    width: 36px;
+    height: 36px;
+  }
+
+  .program-tools .btn {
+    flex: 1 1 100%;
+  }
+
+  .workout-feedback .btn {
+    width: 100%;
+  }
+
+  .client-status {
+    margin-top: -8px;
+  }
+}
+
+/* =====================================================================
+   Админ-панель
+   ===================================================================== */
+
+.admin-tables {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 40px;
+}
+
+.admin-table-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  font: 500 11.5px/1 var(--font-ui);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--marble);
+  text-decoration: none;
+  transition: border-color 0.3s var(--ease), background-color 0.3s var(--ease);
+}
+
+.admin-table-link:hover {
+  border-color: var(--marble);
+  color: var(--ivory);
+}
+
+.admin-table-link.active {
+  border-color: var(--gold);
+  background: rgb(192 138 62 / 0.18);
+  color: var(--ivory);
+}
+
+.admin-count {
+  font: 500 14px/1 var(--font-display);
+  letter-spacing: 0;
+  color: var(--text-soft);
+}
+
+.admin-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--gold);
+  border-radius: 999px;
+  background: rgb(192 138 62 / 0.14);
+  font: 500 12px/1 var(--font-ui);
+  color: var(--ivory);
+  cursor: pointer;
+}
+
+.admin-grid td {
+  font-size: 15px;
+  color: var(--marble);
+  overflow-wrap: anywhere;
+}
+
+.admin-grid td:first-child button {
+  font-size: 17px;
+  white-space: nowrap;
+}
+
+.admin-row-title {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  color: var(--text-soft);
+  white-space: normal;
+}
+
+.admin-pager {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.admin-pager .muted {
+  margin-right: auto;
+}
+
+.admin-form {
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 18px;
+}
+
+.admin-field:has(textarea),
+.admin-related,
+.admin-actions {
+  grid-column: 1 / -1;
+}
+
+.admin-column-name {
+  margin-left: 8px;
+  font: 400 10px/1 var(--font-ui);
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--text-faint);
+}
+
+.admin-input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.admin-input > input,
+.admin-input > select,
+.admin-input > textarea {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-readonly {
+  min-height: 46px;
+  padding: 12px 0;
+  color: var(--text-soft);
+}
+
+.admin-related-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin-top: 8px;
+}
+
+.admin-actions .btn-danger {
+  margin-right: auto;
+}
+
+@media (max-width: 600px) {
+  .admin-tables {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin-right: calc(var(--gutter) * -1);
+    padding-right: var(--gutter);
+    padding-bottom: 6px;
+    scrollbar-width: none;
+  }
+
+  .admin-table-link {
+    flex-shrink: 0;
+  }
+
+  .admin-form {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-pager {
+    flex-wrap: wrap;
+  }
+
+  .admin-pager .muted {
+    flex-basis: 100%;
+  }
+
+  .admin-pager .btn {
+    flex: 1;
+  }
+
+  .admin-actions {
+    flex-wrap: wrap;
+  }
+
+  .admin-actions .btn-danger {
+    flex-basis: 100%;
+    margin-right: 0;
+    order: 3;
+  }
+}
+
 /* =====================================================================
    Мягкие формы
    Кнопки — тонкие капсулы, поля и панели со скруглёнными углами.
@@ -2510,7 +3348,7 @@ textarea {
 
 .wx-active {
   border-radius: var(--radius-panel);
-  box-shadow: inset 0 0 0 1px rgb(158 134 90 / 0.4);
+  box-shadow: inset 0 0 0 1px rgb(192 138 62 / 0.4);
 }
 
 .day,
@@ -2737,7 +3575,7 @@ textarea {
 
   .calendar-cell.is-today .calendar-date {
     box-shadow: inset 0 0 0 1px var(--gold);
-    background: rgb(158 134 90 / 0.14);
+    background: rgb(192 138 62 / 0.14);
   }
 
   .calendar-workout {
@@ -2836,7 +3674,7 @@ textarea {
   }
 
   .records.stack tr.selected {
-    background: linear-gradient(90deg, rgb(158 134 90 / 0.14), transparent);
+    background: linear-gradient(90deg, rgb(192 138 62 / 0.14), transparent);
   }
 
   .records.stack tr.selected td:first-child {
@@ -2878,4 +3716,215 @@ textarea {
   .scene-image {
     animation: none;
   }
+}
+
+/* =====================================================================
+   Оформление «Тёплая бронза»: плотные поверхности вместо стекла,
+   заметные подписи и рамки, бронзовые главные кнопки, карточки
+   для цифр и списков. Правила с :root, чтобы перекрывать
+   базовые стили и мобильные медиазапросы выше.
+   ===================================================================== */
+
+/* Текст на фоне сцены читается лучше: левая часть темнее */
+:root .scene-shade {
+  background:
+    linear-gradient(90deg,
+      rgb(11 10 9 / 0.97) 0%,
+      rgb(11 10 9 / 0.92) 34%,
+      rgb(11 10 9 / 0.5) 62%,
+      rgb(11 10 9 / 0.18) 100%),
+    linear-gradient(180deg, rgb(11 10 9 / 0.35) 0%, transparent 25%, transparent 70%, rgb(11 10 9 / 0.85) 100%);
+}
+
+:root body {
+  font-size: 16.5px;
+}
+
+:root .eyebrow,
+:root .field-label,
+:root .figures dt {
+  font-size: 12.5px;
+  letter-spacing: 0.14em;
+}
+
+:root .figures dt,
+:root .field-label {
+  color: var(--text-soft);
+}
+
+:root .topnav-link {
+  color: var(--text-soft);
+  font-size: 12.5px;
+}
+
+:root .topbar.scrolled,
+:root .menu {
+  background: #0e0c0a;
+}
+
+/* Плотные поверхности вместо полупрозрачных */
+:root .wx-active,
+:root .day,
+:root .calendar,
+:root .modal,
+:root .client-status,
+:root .workout-feedback,
+:root .invitation,
+:root .platebar,
+:root .toast,
+:root .rest,
+:root .invite-banner {
+  background: var(--surface);
+}
+
+:root .wx-active {
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+:root .week-day {
+  background: var(--surface);
+}
+
+:root input:not([type="checkbox"]):not([type="radio"]),
+:root select,
+:root textarea,
+:root .stepper-row {
+  background: var(--field);
+  border-color: var(--line-strong);
+}
+
+:root .rows,
+:root .row-link,
+:root .row-item,
+:root .records th,
+:root .records td {
+  border-color: var(--line);
+}
+
+:root .row-link:hover,
+:root .client-row:hover {
+  background: var(--surface-2);
+}
+
+/* Кнопки */
+:root .btn {
+  font-size: 12.5px;
+}
+
+:root .btn-primary {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--on-accent);
+}
+
+:root .btn-primary:not(:disabled):hover {
+  border-color: var(--accent-light);
+  background: var(--accent);
+}
+
+:root .btn-secondary {
+  border-color: var(--line-strong);
+  background: var(--surface);
+}
+
+/* Активные элементы */
+:root .topnav-link::after,
+:root .chip::after,
+:root .segmented button::after,
+:root .tabs button::after {
+  height: 2px;
+  background: var(--accent-light);
+}
+
+:root .topnav-link.active,
+:root .segmented button.active,
+:root .tabs button.active,
+:root .chip.active {
+  color: var(--ivory);
+}
+
+:root .workout-progress-track {
+  height: 3px;
+  border-radius: 2px;
+}
+
+:root .workout-progress-fill {
+  border-radius: 2px;
+  background: var(--accent-light);
+}
+
+:root .set-check.on,
+:root .scale-option.active,
+:root .admin-table-link.active {
+  border-color: var(--accent-light);
+  background: var(--accent-soft);
+}
+
+:root .calendar-cell.is-today .calendar-date {
+  box-shadow: inset 0 0 0 1px var(--accent-light);
+  background: var(--accent-soft);
+}
+
+:root :focus-visible {
+  outline: 2px solid var(--accent-light);
+}
+
+:root .btn-primary {
+  background: linear-gradient(180deg, #d4a254, #b07a32);
+  border-color: #d9a95c;
+  color: #1a130a;
+  font-weight: 600;
+}
+
+:root .btn-primary:not(:disabled):hover {
+  background: linear-gradient(180deg, #e0b266, #c08a3e);
+  color: #1a130a;
+}
+
+:root .figures div:not(.figure-alert) dd,
+:root .client-percent {
+  color: #f1e6d3;
+}
+
+:root .figures {
+  gap: 10px;
+  border-top: 0;
+}
+
+:root .figures > div,
+:root .figures > div + div,
+:root .figures-card > div:nth-child(n),
+:root .overview-figures > div:nth-child(n) {
+  padding: 18px 20px 16px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+}
+
+:root .clients,
+:root .rows {
+  display: grid;
+  gap: 8px;
+  border-top: 0;
+}
+
+:root .client-row,
+:root .row-link,
+:root .row-item {
+  padding-left: 18px;
+  padding-right: 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+:root .wx {
+  margin-bottom: 8px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+}
+
+:root .workout-exercises {
+  border-top: 0;
 }

@@ -2,6 +2,7 @@ import { useAuth } from "./components/Auth";
 import { Layout } from "./components/Layout";
 import { Empty, Loading } from "./components/ui";
 import { useRoute } from "./lib/router";
+import { AdminPage } from "./pages/AdminPage";
 import { CoachPage } from "./pages/CoachPage";
 import { CoachUserPage } from "./pages/CoachUserPage";
 import { ExercisePage } from "./pages/ExercisePage";
@@ -51,6 +52,15 @@ export function App() {
       break;
     case "profile":
       page = <ProfilePage />;
+      break;
+    case "admin":
+      page = user.is_admin ? (
+        <AdminPage table={route.table} />
+      ) : (
+        <Empty title="Раздел только для администратора">
+          <a href="#/">На главную</a>
+        </Empty>
+      );
       break;
     case "coach":
     case "coachUser":

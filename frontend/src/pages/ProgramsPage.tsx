@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 
 import { programs as programsApi } from "../api";
 import type { ProgramDetail } from "../api/types";
+import { useUser } from "../components/Auth";
 import { useScene } from "../components/Scene";
 import { useToast } from "../components/Toast";
 import { Button, Empty, ErrorNote, Field, Loading, Modal, PageHeader } from "../components/ui";
@@ -13,6 +14,7 @@ import { useAsync } from "../lib/useAsync";
 export function ProgramsPage() {
   useScene("pillars");
 
+  const me = useUser();
   const { data: loaded, error, loading, reload } = useAsync(
     () => Promise.all([loadProgramDetails(), programsApi.templates()]),
     [],
@@ -30,6 +32,11 @@ export function ProgramsPage() {
     <div className="page">
       <PageHeader
         title="Программы"
+        subtitle={
+          me.role === "coach"
+            ? "Ваши программы — это и шаблоны для клиентов: назначьте любую из карточки клиента."
+            : undefined
+        }
         actions={
           <Button variant="primary" icon="plus" onClick={() => setCreating(true)}>
             Новая программа
@@ -52,6 +59,11 @@ export function ProgramsPage() {
             return (
               <li key={program.id}>
                 <a className="program-card" href={`#/programs/${program.id}`}>
+                  {program.assigned_by && (
+                    <span className="eyebrow program-coach">
+                      от тренера {program.assigned_by.username}
+                    </span>
+                  )}
                   <span className="program-name">{program.name}</span>
                   {program.description && <span className="muted">{program.description}</span>}
                   <span className="program-days">

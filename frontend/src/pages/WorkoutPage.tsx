@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { workouts } from "../api";
 import type { WorkoutDetail, WorkoutExerciseDetail, WorkoutStatus } from "../api/types";
+import { FeedbackDialog, FeedbackLine } from "../components/Feedback";
 import { useScene } from "../components/Scene";
 import { Icon } from "../components/Icon";
 import { PlateBar } from "../components/PlateBar";
@@ -28,12 +29,20 @@ function isDone(item: WorkoutExerciseDetail): boolean {
   return item.performed_sets.length >= item.sets;
 }
 
+// Упражнение, которого уже нет в плане, узнаём по самому упражнению
+function itemKey(item: WorkoutExerciseDetail): string {
+  return item.program_exercise_id !== null
+    ? `plan-${item.program_exercise_id}`
+    : `done-${item.exercise.id}`;
+}
+
 export function WorkoutPage({ id }: { id: number }) {
   useScene("throne");
 
   const toast = useToast();
   const [confirmDialog, confirm] = useConfirm();
-  const [activeId, setActiveId] = useState<number | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [rating, setRating] = useState(false);
   // key меняется на каждый записанный подход, чтобы таймер начинался заново
   const [rest, setRest] = useState<{ seconds: number; key: number } | null>(null);
   const [moving, setMoving] = useState(false);
@@ -56,7 +65,7 @@ export function WorkoutPage({ id }: { id: number }) {
   const [workout] = data;
 
   const active =
-    workout.exercises.find((item) => item.program_exercise_id === activeId)
+    workout.exercises.find((item) => itemKey(item) === activeId)
     ?? workout.exercises.find((item) => !isDone(item))
     ?? workout.exercises[0];
 
@@ -68,6 +77,12 @@ export function WorkoutPage({ id }: { id: number }) {
     try {
       await workouts.patch(id, { status });
       replaceWorkout({ ...workout, status });
+
+      // Сразу предложить оценить тренировку
+      if (status === "completed" && workout.wellbeing === null && workout.difficulty === null) {
+        setRating(true);
+      }
+
       toast.success(
         status === "completed"
           ? "Тренировка завершена"
@@ -109,6 +124,9 @@ export function WorkoutPage({ id }: { id: number }) {
         subtitle={
           <>
             {workout.program_name}
+            {workout.coach_name && (
+              <span className="muted">программа тренера {workout.coach_name}</span>
+            )}
             <StatusPill status={workout.status} />
           </>
         }
@@ -131,24 +149,26 @@ export function WorkoutPage({ id }: { id: number }) {
       {workout.exercises.length === 0 && (
         <p className="muted">
           В этом дне программы нет упражнений.{" "}
-          <a href={`#/programs/${workout.program_id}`}>Добавьте их в программу</a>.
+          {workout.program_id !== null && (
+            <a href={`#/programs/${workout.program_id}`}>Добавьте их в программу</a>
+          )}
         </p>
       )}
 
       <ol className="workout-exercises">
         {workout.exercises.map((item, index) => {
-          const isActive = item.program_exercise_id === active?.program_exercise_id;
+          const isActive = active !== undefined && itemKey(item) === itemKey(active);
 
           return (
             <li
-              key={item.program_exercise_id}
+              key={itemKey(item)}
               className={`wx ${isActive ? "wx-active" : ""} ${isDone(item) ? "wx-done" : ""}`}
             >
               <button
                 type="button"
                 className="wx-head"
                 aria-expanded={isActive}
-                onClick={() => setActiveId(item.program_exercise_id)}
+                onClick={() => setActiveId(itemKey(item))}
               >
                 <span className="wx-index">{index + 1}</span>
                 <span className="wx-name">{item.exercise.name}</span>
@@ -159,7 +179,7 @@ export function WorkoutPage({ id }: { id: number }) {
 
               {isActive && (
                 <SetLogger
-                  key={item.program_exercise_id}
+                  key={itemKey(item)}
                   workoutId={workout.id}
                   item={item}
                   isBarbell={equipmentById.get(item.exercise.id) === "Штанга"}
@@ -174,7 +194,7 @@ export function WorkoutPage({ id }: { id: number }) {
                       const nextItem = workout.exercises.find(
                         (other, otherIndex) => otherIndex > index && !isDone(other),
                       );
-                      if (nextItem) setActiveId(nextItem.program_exercise_id);
+                      if (nextItem) setActiveId(itemKey(nextItem));
                     }
                   }}
                 />
@@ -183,6 +203,26 @@ export function WorkoutPage({ id }: { id: number }) {
           );
         })}
       </ol>
+
+      {workout.status === "completed" && (
+        <section className="workout-feedback" aria-label="Оценка тренировки">
+          {workout.wellbeing !== null || workout.difficulty !== null || workout.feedback_comment ? (
+            <>
+              <span className="eyebrow">Ваша оценка</span>
+              <FeedbackLine feedback={workout} />
+              <Button small variant="ghost" icon="edit" onClick={() => setRating(true)}>
+                Изменить
+              </Button>
+            </>
+          ) : (
+            <>
+              <span className="eyebrow">Оценка</span>
+              <span className="muted">Отметьте самочувствие и сложность — так виден прогресс.</span>
+              <Button small onClick={() => setRating(true)}>Оценить тренировку</Button>
+            </>
+          )}
+        </section>
+      )}
 
       <div className="workout-footer">
         {workout.status === "completed" ? (
@@ -218,6 +258,19 @@ export function WorkoutPage({ id }: { id: number }) {
         />
       )}
 
+      {rating && (
+        <FeedbackDialog
+          workoutId={workout.id}
+          initial={workout}
+          onClose={() => setRating(false)}
+          onSaved={(feedback) => {
+            replaceWorkout({ ...workout, ...feedback });
+            setRating(false);
+            toast.success("Оценка сохранена");
+          }}
+        />
+      )}
+
       {confirmDialog}
     </div>
   );
@@ -245,12 +298,15 @@ function SetLogger({
 
   const nextNumber = Math.max(0, ...item.performed_sets.map((set) => set.set_number)) + 1;
 
+  const planExerciseId = item.program_exercise_id;
+
   const logSet = async () => {
+    if (planExerciseId === null) return;
     setBusy(true);
 
     try {
       await workouts.addSet(workoutId, {
-        program_exercise_id: item.program_exercise_id,
+        program_exercise_id: planExerciseId,
         set_number: nextNumber,
         weight,
         reps,
@@ -284,11 +340,17 @@ function SetLogger({
 
   return (
     <div className="logger">
-      <p className="logger-plan">
-        План: {item.sets} × {formatReps(item.target_reps, item.target_reps_max)}
-        {item.target_weight !== null && `, ${formatWeight(item.target_weight)}`}
-        {item.rest_seconds !== null && `, отдых ${formatDuration(item.rest_seconds)}`}
-      </p>
+      {planExerciseId === null ? (
+        <p className="logger-plan">
+          Этого упражнения больше нет в программе. Сделанные подходы сохранены в истории.
+        </p>
+      ) : (
+        <p className="logger-plan">
+          План: {item.sets} × {formatReps(item.target_reps, item.target_reps_max)}
+          {item.target_weight !== null && `, ${formatWeight(item.target_weight)}`}
+          {item.rest_seconds !== null && `, отдых ${formatDuration(item.rest_seconds)}`}
+        </p>
+      )}
       {item.notes && <p className="logger-notes">{item.notes}</p>}
 
       {item.performed_sets.length > 0 && (
@@ -315,16 +377,20 @@ function SetLogger({
         </ol>
       )}
 
-      <div className="logger-inputs">
-        <Stepper label="Вес" unit="кг" value={weight} step={2.5} onChange={setWeight} />
-        <Stepper label="Повторы" value={reps} step={1} min={1} onChange={setReps} />
-      </div>
+      {planExerciseId !== null && (
+        <>
+          <div className="logger-inputs">
+            <Stepper label="Вес" unit="кг" value={weight} step={2.5} onChange={setWeight} />
+            <Stepper label="Повторы" value={reps} step={1} min={1} onChange={setReps} />
+          </div>
 
-      {isBarbell && <PlateBar weight={weight} />}
+          {isBarbell && <PlateBar weight={weight} />}
 
-      <Button variant="primary" className="btn-block btn-log" onClick={logSet} busy={busy}>
-        Записать подход {nextNumber}
-      </Button>
+          <Button variant="primary" className="btn-block btn-log" onClick={logSet} busy={busy}>
+            Записать подход {nextNumber}
+          </Button>
+        </>
+      )}
     </div>
   );
 }

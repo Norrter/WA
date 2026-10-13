@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 
-import { programs as programsApi } from "../api";
+import { coach as coachApi, programs as programsApi } from "../api";
+import { useUser } from "../components/Auth";
 import type { Exercise, ProgramDay, ProgramDetail, ProgramExercise } from "../api/types";
 import { useScene } from "../components/Scene";
 import { ExercisePicker } from "../components/ExercisePicker";
@@ -33,10 +34,12 @@ type Dialog =
 export function ProgramPage({ id }: { id: number }) {
   useScene("pillars");
 
+  const me = useUser();
   const toast = useToast();
   const [confirmDialog, confirm] = useConfirm();
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const [newDay, setNewDay] = useState("");
+  const [copying, setCopying] = useState(false);
 
   const { data, error, loading, reload, setData } = useAsync(
     () => Promise.all([programsApi.get(id), loadExercises()]),
@@ -48,6 +51,10 @@ export function ProgramPage({ id }: { id: number }) {
   if (!data) return null;
 
   const [program, exercises] = data;
+
+  // Своя программа или программа клиента (смотрит тренер)
+  const isOwner = program.user_id === me.id;
+  const editable = program.can_edit;
 
   const refresh = async () => setData([await programsApi.get(id), exercises]);
 
@@ -75,10 +82,24 @@ export function ProgramPage({ id }: { id: number }) {
     setNewDay("");
   };
 
+  // Создать на основе: своя редактируемая копия
+  const copyProgram = async () => {
+    setCopying(true);
+
+    try {
+      const copy = await programsApi.copy(id);
+      toast.success("Создана ваша копия программы");
+      navigate(`/programs/${copy.id}`);
+    } catch (caught) {
+      toast.error(caught);
+      setCopying(false);
+    }
+  };
+
   const removeProgram = async () => {
     if (
       !(await confirm(
-        "Программа будет удалена вместе с днями, запланированными тренировками и записанными подходами.",
+        "Программа и будущие тренировки по ней будут удалены. Выполненные тренировки и подходы останутся в истории.",
         "Удалить программу",
       ))
     ) {
@@ -88,7 +109,7 @@ export function ProgramPage({ id }: { id: number }) {
     try {
       await programsApi.remove(id);
       toast.success("Программа удалена");
-      navigate("/programs");
+      navigate(isOwner ? "/programs" : `/coach/clients/${program.user_id}`);
     } catch (caught) {
       toast.error(caught);
     }
@@ -97,22 +118,64 @@ export function ProgramPage({ id }: { id: number }) {
   return (
     <div className="page">
       <PageHeader
-        back={{ href: "#/programs", label: "Программы" }}
+        back={
+          isOwner
+            ? { href: "#/programs", label: "Программы" }
+            : { href: `#/coach/clients/${program.user_id}`, label: "Клиент" }
+        }
+        eyebrow={
+          program.assigned_by
+            ? isOwner
+              ? `Программа тренера ${program.assigned_by.username}`
+              : "Программа клиента · назначена вами"
+            : isOwner
+              ? undefined
+              : "Программа клиента"
+        }
         title={program.name}
         subtitle={program.description ?? undefined}
         actions={
           <>
-            <Button icon="edit" onClick={() => setDialog({ kind: "rename" })}>Изменить</Button>
-            <Button
-              variant="primary"
-              onClick={() => setDialog({ kind: "schedule" })}
-              disabled={program.days.length === 0}
-            >
-              Запланировать
-            </Button>
+            {editable && (
+              <Button icon="edit" onClick={() => setDialog({ kind: "rename" })}>Изменить</Button>
+            )}
+            {!editable && (
+              <Button busy={copying} onClick={() => void copyProgram()}>
+                {isOwner ? "Создать на основе" : "Копию себе"}
+              </Button>
+            )}
+            {(isOwner || editable) && (
+              <Button
+                variant="primary"
+                onClick={() => setDialog({ kind: "schedule" })}
+                disabled={program.days.length === 0}
+              >
+                Запланировать
+              </Button>
+            )}
           </>
         }
       />
+
+      {!editable && isOwner && program.assigned_by && (
+        <p className="program-note">
+          Эту программу ведёт тренер {program.assigned_by.username}: заниматься по ней можно,
+          а менять — только ему. Чтобы настроить под себя, нажмите «Создать на основе» —
+          появится ваша копия.
+        </p>
+      )}
+      {!editable && !isOwner && (
+        <p className="program-note">
+          Это программа, которую клиент составил сам. Менять её может только он. Чтобы вести
+          клиента по своей программе, назначьте её из карточки клиента.
+        </p>
+      )}
+      {editable && !isOwner && (
+        <p className="program-note">
+          Изменения увидит клиент. Они затронут будущие тренировки, выполненные останутся
+          как были.
+        </p>
+      )}
 
       {program.days.length === 0 && (
         <Empty title="В программе пока нет дней">
@@ -125,6 +188,7 @@ export function ProgramPage({ id }: { id: number }) {
           <li key={day.id} className="day">
             <div className="day-head">
               <h2 className="day-name">{day.name}</h2>
+              {editable && (
               <div className="day-tools">
                 <IconButton
                   icon="up"
@@ -157,7 +221,7 @@ export function ProgramPage({ id }: { id: number }) {
                   onClick={async () => {
                     if (
                       await confirm(
-                        `День «${day.name}» и тренировки по нему будут удалены.`,
+                        `День «${day.name}» и будущие тренировки по нему будут удалены. Выполненные останутся в истории.`,
                         "Удалить день",
                       )
                     ) {
@@ -166,6 +230,7 @@ export function ProgramPage({ id }: { id: number }) {
                   }}
                 />
               </div>
+              )}
             </div>
 
             {day.exercises.length > 0 && (
@@ -182,6 +247,7 @@ export function ProgramPage({ id }: { id: number }) {
                       {item.target_weight !== null && ` · ${formatWeight(item.target_weight)}`}
                       {item.rest_seconds !== null && ` · отдых ${formatDuration(item.rest_seconds)}`}
                     </span>
+                    {editable && (
                     <span className="day-tools">
                       <IconButton
                         icon="up"
@@ -222,7 +288,7 @@ export function ProgramPage({ id }: { id: number }) {
                         onClick={async () => {
                           if (
                             await confirm(
-                              `«${item.exercise.name}» будет убрано из дня вместе с записанными по нему подходами.`,
+                              `«${item.exercise.name}» будет убрано из дня. Сделанные подходы останутся в истории.`,
                               "Убрать",
                             )
                           ) {
@@ -231,18 +297,23 @@ export function ProgramPage({ id }: { id: number }) {
                         }}
                       />
                     </span>
+                    )}
                   </li>
                 ))}
               </ol>
             )}
 
-            <Button small icon="plus" onClick={() => setDialog({ kind: "pick", day })}>
-              Добавить упражнение
-            </Button>
+            {editable && (
+              <Button small icon="plus" onClick={() => setDialog({ kind: "pick", day })}>
+                Добавить упражнение
+              </Button>
+            )}
           </li>
         ))}
       </ol>
 
+      {editable && (
+      <>
       <form className="add-day" onSubmit={addDay}>
         <input
           required
@@ -256,8 +327,16 @@ export function ProgramPage({ id }: { id: number }) {
       </form>
 
       <section className="danger-zone">
-        <Button variant="danger" icon="trash" onClick={removeProgram}>Удалить программу</Button>
+        <p className="muted">
+          Нужен вариант этой программы? Создайте копию и меняйте её, оригинал останется как есть.
+        </p>
+        <div className="program-tools">
+          <Button busy={copying} onClick={() => void copyProgram()}>Создать на основе</Button>
+          <Button variant="danger" icon="trash" onClick={removeProgram}>Удалить программу</Button>
+        </div>
       </section>
+      </>
+      )}
 
       {dialog?.kind === "rename" && (
         <RenameProgramDialog
@@ -276,6 +355,13 @@ export function ProgramPage({ id }: { id: number }) {
           programId={program.id}
           onClose={() => setDialog(null)}
           onDone={() => setDialog(null)}
+          generate={
+            isOwner || program.user_id === null
+              ? undefined
+              : async (programId, schedule) =>
+                  (await coachApi.schedule(program.user_id as number, programId, schedule))
+                    .workouts_created
+          }
         />
       )}
 

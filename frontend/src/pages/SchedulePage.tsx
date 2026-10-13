@@ -18,6 +18,7 @@ import {
 } from "../lib/dates";
 import { loadProgramDetails } from "../lib/data";
 import { useAsync } from "../lib/useAsync";
+import { workoutNames } from "../lib/workouts";
 
 export function SchedulePage() {
   useScene("colonnade");
@@ -126,7 +127,7 @@ export function SchedulePage() {
                 <CalendarWorkout
                   key={workout.id}
                   workout={workout}
-                  program={programById.get(workout.program_id)}
+                  programs={programById}
                 />
               ))}
             </div>
@@ -143,16 +144,15 @@ export function SchedulePage() {
         ) : (
           <ul className="rows">
             {monthWorkouts.map((workout) => {
-              const program = programById.get(workout.program_id);
-              const day = program?.days.find((item) => item.id === workout.program_day_id);
+              const { dayName, programName } = workoutNames(workout, programById);
 
               return (
                 <li key={workout.id}>
                   <a className="row-link" href={`#/workouts/${workout.id}`}>
                     <span className="row-date">{formatDayWithWeekday(workout.scheduled_date)}</span>
                     <span className="row-main">
-                      {day?.name ?? "Тренировка"}
-                      <span className="muted"> · {program?.name}</span>
+                      {dayName}
+                      {programName && <span className="muted"> · {programName}</span>}
                     </span>
                     <StatusPill status={workout.status} />
                   </a>
@@ -191,20 +191,20 @@ export function SchedulePage() {
 
 function CalendarWorkout({
   workout,
-  program,
+  programs,
 }: {
   workout: ScheduledWorkout;
-  program?: ProgramDetail;
+  programs: Map<number, ProgramDetail>;
 }) {
-  const day = program?.days.find((item) => item.id === workout.program_day_id);
+  const { dayName, programName } = workoutNames(workout, programs);
 
   return (
     <a
       href={`#/workouts/${workout.id}`}
       className={`calendar-workout status-${workout.status}`}
-      title={`${day?.name ?? "Тренировка"} · ${program?.name ?? ""}`}
+      title={programName ? `${dayName} · ${programName}` : dayName}
     >
-      {day?.name ?? "Тренировка"}
+      {dayName}
     </a>
   );
 }

@@ -14,6 +14,7 @@ export type Route =
   | { name: "profile" }
   | { name: "coach" }
   | { name: "coachUser"; id: number }
+  | { name: "admin"; table: string | null }
   | { name: "notFound" };
 
 export function parseRoute(hash: string): Route {
@@ -37,6 +38,8 @@ export function parseRoute(hash: string): Route {
         return { name: "profile" };
       case "coach":
         return { name: "coach" };
+      case "admin":
+        return { name: "admin", table: null };
     }
   }
 
@@ -51,8 +54,13 @@ export function parseRoute(hash: string): Route {
     }
   }
 
-  // #/coach/users/5
-  if (parts.length === 3 && section === "coach" && parts[1] === "users") {
+  // #/admin/users
+  if (parts.length === 2 && section === "admin" && /^[a-z_]+$/.test(parts[1])) {
+    return { name: "admin", table: parts[1] };
+  }
+
+  // #/coach/clients/5
+  if (parts.length === 3 && section === "coach" && parts[1] === "clients") {
     const userId = Number(parts[2]);
     if (Number.isInteger(userId) && userId > 0) return { name: "coachUser", id: userId };
   }

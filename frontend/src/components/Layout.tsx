@@ -12,6 +12,9 @@ const NAV: { href: string; label: string; match: Route["name"][] }[] = [
   { href: "#/profile", label: "Профиль", match: ["profile"] },
 ];
 
+// Админ-панель — только администраторам
+const ADMIN_NAV = { href: "#/admin", label: "Админ", match: ["admin"] as Route["name"][] };
+
 // Раздел видят только тренеры
 const COACH_NAV = { href: "#/coach", label: "Тренер", match: ["coach", "coachUser"] as Route["name"][] };
 
@@ -46,7 +49,11 @@ export function Layout({ route, children }: { route: Route; children: ReactNode 
     };
   }, [menuOpen]);
 
-  const nav = user?.role === "coach" ? [...NAV, COACH_NAV] : NAV;
+  const nav = [
+    ...NAV,
+    ...(user?.role === "coach" ? [COACH_NAV] : []),
+    ...(user?.is_admin ? [ADMIN_NAV] : []),
+  ];
   const isActive = (item: (typeof NAV)[number]) => item.match.includes(route.name);
 
   return (
