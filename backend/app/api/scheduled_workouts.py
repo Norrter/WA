@@ -280,6 +280,12 @@ async def workout_detail(session: AsyncSession, workout: ScheduledWorkout) -> di
         coach = await session.get(User, program.assigned_by_coach_id)
         coach_name = coach.username if coach else None
 
+    comment_author = None
+
+    if workout.coach_comment and workout.coach_comment_by is not None:
+        author = await session.get(User, workout.coach_comment_by)
+        comment_author = author.username if author else None
+
     return {
         "id": workout.id,
         "program_id": workout.program_id,
@@ -294,6 +300,9 @@ async def workout_detail(session: AsyncSession, workout: ScheduledWorkout) -> di
         "feedback_at": workout.feedback_at,
         "coach_name": coach_name,
         "exercises": exercises,
+        "coach_comment": workout.coach_comment,
+        "coach_comment_at": workout.coach_comment_at,
+        "coach_comment_author": comment_author,
     }
 
 

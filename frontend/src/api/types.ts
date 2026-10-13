@@ -144,7 +144,7 @@ export interface WorkoutExerciseDetail {
   performed_sets: WorkoutSet[];
 }
 
-export interface WorkoutDetail extends WorkoutFeedback {
+export type WorkoutDetail = WorkoutFeedback & {
   id: number;
   program_id: number | null;
   program_name: string;
@@ -155,7 +155,7 @@ export interface WorkoutDetail extends WorkoutFeedback {
   // программу ведёт тренер
   coach_name: string | null;
   exercises: WorkoutExerciseDetail[];
-}
+} & CoachComment
 
 export interface HistoryItem {
   workout_set_id: number;
@@ -276,6 +276,7 @@ export interface CoachWorkout {
   wellbeing: number | null;
   difficulty: number | null;
   feedback_comment: string | null;
+  coach_comment: string | null;
 }
 
 export interface KeyExercise {
@@ -313,8 +314,25 @@ export interface ScheduleInput {
 export interface CoachNote {
   id: number;
   text: string;
+  // заметка видна клиенту
+  shared: boolean;
   created_at: string;
   updated_at: string;
+}
+
+// Заметка тренера, которую видит клиент
+export interface SharedNote {
+  id: number;
+  text: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Комментарий тренера к тренировке
+export interface CoachComment {
+  coach_comment: string | null;
+  coach_comment_at: string | null;
+  coach_comment_author: string | null;
 }
 
 // Тренер глазами клиента

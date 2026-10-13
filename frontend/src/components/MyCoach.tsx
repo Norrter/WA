@@ -74,3 +74,53 @@ export function CoachingSection() {
     </section>
   );
 }
+
+// Сообщение тренера: заметка для клиента или комментарий к тренировке
+export function CoachMessage({
+  label,
+  date,
+  text,
+}: {
+  label: string;
+  date: string | null;
+  text: string;
+}) {
+  return (
+    <article className="coach-message">
+      <div className="coach-message-head">
+        <span>{label}</span>
+        {date && <time dateTime={date}>{formatDay(date.slice(0, 10))}</time>}
+      </div>
+      <p className="coach-message-text">{text}</p>
+    </article>
+  );
+}
+
+// Заметки, которые тренер открыл клиенту. limit — показать только
+// последние (на главной), остальное — ссылкой в профиль.
+export function SharedNotes({ limit, title = "От тренера" }: { limit?: number; title?: string }) {
+  const state = useAsync(() => Promise.all([coaching.state(), coaching.notes()]), []);
+
+  if (!state.data) return null;
+
+  const [current, notes] = state.data;
+
+  if (!current.coach || notes.length === 0) return null;
+
+  const visible = limit ? notes.slice(0, limit) : notes;
+  const author = current.coach.coach.username;
+
+  return (
+    <section className="block shared-notes" aria-labelledby="shared-notes-title">
+      <h2 className="block-title" id="shared-notes-title">{title}</h2>
+      {visible.map((note) => (
+        <CoachMessage key={note.id} label={author} date={note.updated_at} text={note.text} />
+      ))}
+      {limit && notes.length > limit && (
+        <a className="coach-messages-more" href="#/profile">
+          Все заметки тренера ({notes.length})
+        </a>
+      )}
+    </section>
+  );
+}

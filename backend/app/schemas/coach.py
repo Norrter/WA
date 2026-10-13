@@ -91,6 +91,7 @@ class CoachWorkoutItem(BaseModel):
     wellbeing: int | None = None
     difficulty: int | None = None
     feedback_comment: str | None = None
+    coach_comment: str | None = None
 
 
 class KeyExercise(BaseModel):
@@ -159,13 +160,47 @@ NoteText = Annotated[
 
 class NoteInput(BaseModel):
     text: NoteText
+    # заметка видна клиенту
+    shared: bool = False
+
+
+class NotePatch(BaseModel):
+    text: NoteText | None = None
+    shared: bool | None = None
 
 
 class NoteResponse(BaseModel):
     id: int
     text: str
+    shared: bool
     created_at: datetime
     updated_at: datetime
+
+
+class SharedNoteResponse(BaseModel):
+    """Заметка тренера глазами клиента."""
+
+    id: int
+    text: str
+    created_at: datetime
+    updated_at: datetime
+
+
+CommentText = Annotated[
+    str,
+    StringConstraints(strip_whitespace=True, max_length=2000),
+]
+
+
+class CoachCommentInput(BaseModel):
+    # пустая строка удаляет комментарий
+    text: CommentText
+
+
+class CoachCommentResponse(BaseModel):
+    coach_comment: str | None
+    coach_comment_at: datetime | None
+    coach_comment_author: str | None
 
 
 class CurrentCoach(BaseModel):

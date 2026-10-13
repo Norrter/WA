@@ -4,12 +4,14 @@ from datetime import datetime
 from enum import Enum
 
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     DateTime,
     ForeignKey,
     Index,
     String,
     Text,
+    false,
     func,
     text,
 )
@@ -99,7 +101,8 @@ class CoachClient(Base):
 
 
 class CoachNote(Base):
-    """Заметка тренера о работе с клиентом. Клиент её не видит."""
+    """Заметка тренера о работе с клиентом. Клиент видит только
+    заметки с shared = true («Видна клиенту»)."""
 
     __tablename__ = "coach_notes"
 
@@ -116,6 +119,14 @@ class CoachNote(Base):
     )
 
     text: Mapped[str] = mapped_column(Text, nullable=False)
+
+    # Заметка видна клиенту (в профиле и на главной)
+    shared: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=false(),
+    )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

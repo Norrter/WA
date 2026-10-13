@@ -33,15 +33,20 @@ from app.schemas.coach import (
     AssignProgramResponse,
     CoachClientCard,
     CoachClientItem,
+    CoachCommentInput,
+    CoachCommentResponse,
     CoachExerciseRecords,
     CoachWorkoutItem,
     InviteRequest,
     NoteInput,
+    NotePatch,
     NoteResponse,
     PeriodOverview,
     ScheduleRequest,
 )
+from app.api.scheduled_workouts import workout_detail
 from app.schemas.program import ProgramResponse
+from app.schemas.scheduled_workout import ScheduledWorkoutDetailResponse
 from app.schemas.progress import ExerciseHistoryItem
 from app.schemas.progress import StatsSummaryResponse, WeeklyVolumeItem
 from app.services.coaching import client_metrics, period_overview
@@ -414,9 +419,75 @@ async def get_client_workouts(
             "wellbeing": workout.wellbeing,
             "difficulty": workout.difficulty,
             "feedback_comment": workout.feedback_comment,
+            "coach_comment": workout.coach_comment,
         }
         for workout, program_name, day_name, sets, volume in result.all()
     ]
+
+
+async def get_client_workout(
+    session: AsyncSession,
+    coach: User,
+    client_id: int,
+    workout_id: int,
+) -> ScheduledWorkout:
+    await get_active_link(session, coach, client_id)
+    workout = await session.get(ScheduledWorkout, workout_id)
+
+    if workout is None or workout.user_id != client_id:
+        raise HTTPException(status_code=404, detail="Workout not found")
+
+    return workout
+
+
+@router.get(
+    "/clients/{client_id}/workouts/{workout_id}",
+    response_model=ScheduledWorkoutDetailResponse,
+)
+async def get_client_workout_detail(
+    client_id: int,
+    workout_id: int,
+    session: AsyncSession = Depends(get_session),
+    coach: User = Depends(get_current_coach),
+):
+    """Тренировка клиента целиком: план, сделанные подходы, оценка
+    клиента и комментарий тренера. Только для чтения."""
+    workout = await get_client_workout(session, coach, client_id, workout_id)
+
+    return await workout_detail(session, workout)
+
+
+@router.put(
+    "/clients/{client_id}/workouts/{workout_id}/comment",
+    response_model=CoachCommentResponse,
+)
+async def set_workout_comment(
+    client_id: int,
+    workout_id: int,
+    data: CoachCommentInput,
+    session: AsyncSession = Depends(get_session),
+    coach: User = Depends(get_current_coach),
+):
+    """Комментарий тренера к тренировке. Клиент видит его в своей
+    тренировке. Пустой текст удаляет комментарий."""
+    workout = await get_client_workout(session, coach, client_id, workout_id)
+
+    if data.text:
+        workout.coach_comment = data.text
+        workout.coach_comment_at = now()
+        workout.coach_comment_by = coach.id
+    else:
+        workout.coach_comment = None
+        workout.coach_comment_at = None
+        workout.coach_comment_by = None
+
+    await session.commit()
+
+    return {
+        "coach_comment": workout.coach_comment,
+        "coach_comment_at": workout.coach_comment_at,
+        "coach_comment_author": coach.username if workout.coach_comment else None,
+    }
 
 
 @router.get(
@@ -623,7 +694,12 @@ async def create_note(
 ):
     await get_active_link(session, coach, client_id)
 
-    note = CoachNote(coach_id=coach.id, client_id=client_id, text=data.text)
+    note = CoachNote(
+        coach_id=coach.id,
+        client_id=client_id,
+        text=data.text,
+        shared=data.shared,
+    )
     session.add(note)
     await session.commit()
     await session.refresh(note)
@@ -634,12 +710,18 @@ async def create_note(
 @router.patch("/notes/{note_id}", response_model=NoteResponse)
 async def update_note(
     note_id: int,
-    data: NoteInput,
+    data: NotePatch,
     session: AsyncSession = Depends(get_session),
     coach: User = Depends(get_current_coach),
 ):
+    """Изменить текст и/или видимость заметки для клиента."""
     note = await get_own_note(session, coach, note_id)
-    note.text = data.text
+
+    if data.text is not None:
+        note.text = data.text
+
+    if data.shared is not None:
+        note.shared = data.shared
 
     await session.commit()
     await session.refresh(note)

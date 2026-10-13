@@ -2,6 +2,8 @@
 
 import { query, request } from "./client";
 import type {
+  CoachComment,
+  SharedNote,
   AdminRow,
   AdminStats,
   AdminTable,
@@ -205,16 +207,21 @@ export const coach = {
     ),
 
   notes: (id: number) => request<CoachNote[]>("GET", `/coach/clients/${id}/notes`),
-  addNote: (id: number, text: string) =>
-    request<CoachNote>("POST", `/coach/clients/${id}/notes`, { text }),
-  updateNote: (noteId: number, text: string) =>
-    request<CoachNote>("PATCH", `/coach/notes/${noteId}`, { text }),
+  addNote: (id: number, text: string, shared: boolean) =>
+    request<CoachNote>("POST", `/coach/clients/${id}/notes`, { text, shared }),
+  updateNote: (noteId: number, changes: { text?: string; shared?: boolean }) =>
+    request<CoachNote>("PATCH", `/coach/notes/${noteId}`, changes),
+  workout: (id: number, workoutId: number) =>
+    request<WorkoutDetail>("GET", `/coach/clients/${id}/workouts/${workoutId}`),
+  comment: (id: number, workoutId: number, text: string) =>
+    request<CoachComment>("PUT", `/coach/clients/${id}/workouts/${workoutId}/comment`, { text }),
   removeNote: (noteId: number) => request<void>("DELETE", `/coach/notes/${noteId}`),
 };
 
-// Тренер глазами клиента: приглашения и текущий тренер
+// Тренер глазами клиента: текущий тренер и его заметки для клиента
 export const coaching = {
   state: () => request<CoachingState>("GET", "/coaching"),
+  notes: () => request<SharedNote[]>("GET", "/coaching/notes"),
   end: () => request<CoachingState>("POST", "/coaching/end"),
 };
 

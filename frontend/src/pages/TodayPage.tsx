@@ -1,6 +1,7 @@
 import { stats, workouts } from "../api";
 import type { ProgramDetail, ScheduledWorkout } from "../api/types";
 import { useUser } from "../components/Auth";
+import { SharedNotes } from "../components/MyCoach";
 import { SceneSection, useScene } from "../components/Scene";
 import { Button, ErrorNote, Loading, StatusPill } from "../components/ui";
 import {
@@ -77,6 +78,8 @@ export function TodayPage() {
       </SceneSection>
 
       <SceneSection scene="colonnade" className="today-rest" labelledBy="week-title">
+        <SharedNotes limit={2} />
+
         <section className="block">
           <h2 id="week-title" className="block-title">Эта неделя</h2>
           <WeekStrip start={weekStart} workouts={list} programs={programById} />

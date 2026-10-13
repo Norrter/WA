@@ -268,13 +268,15 @@ export function CoachUserPage({ id }: { id: number }) {
           ) : (
             <ul className="rows">
               {upcoming.map((workout) => (
-                <li key={workout.id} className="row-item">
-                  <span className="row-date">{relativeDay(workout.scheduled_date)}</span>
-                  <span className="row-main">
-                    {workout.day_name}
-                    <span className="row-note">{workout.program_name}</span>
-                  </span>
-                  <StatusPill status={workout.status} />
+                <li key={workout.id}>
+                  <a className="row-link row-item" href={`#/coach/clients/${id}/workouts/${workout.id}`}>
+                    <span className="row-date">{relativeDay(workout.scheduled_date)}</span>
+                    <span className="row-main">
+                      {workout.day_name}
+                      <span className="row-note">{workout.program_name}</span>
+                    </span>
+                    <StatusPill status={workout.status} />
+                  </a>
                 </li>
               ))}
             </ul>
@@ -290,18 +292,23 @@ export function CoachUserPage({ id }: { id: number }) {
           ) : (
             <ul className="rows">
               {workouts.map((workout) => (
-                <li key={workout.id} className="row-item">
-                  <span className="row-date">{formatDayWithWeekday(workout.scheduled_date)}</span>
-                  <span className="row-main">
-                    {workout.day_name}
-                    <span className="row-note">{workout.program_name}</span>
-                    <FeedbackLine feedback={workout} />
-                  </span>
-                  <span className="row-figures">
-                    {workout.sets_completed > 0 &&
-                      `${workout.sets_completed} ${plural(workout.sets_completed, "подход", "подхода", "подходов")} · ${formatNumber(workout.volume)} кг`}
-                  </span>
-                  <StatusPill status={workout.status} />
+                <li key={workout.id}>
+                  <a className="row-link row-item" href={`#/coach/clients/${id}/workouts/${workout.id}`}>
+                    <span className="row-date">{formatDayWithWeekday(workout.scheduled_date)}</span>
+                    <span className="row-main">
+                      {workout.day_name}
+                      <span className="row-note">{workout.program_name}</span>
+                      <FeedbackLine feedback={workout} />
+                      {workout.coach_comment && (
+                        <span className="row-coach-comment">Ваш комментарий: {workout.coach_comment}</span>
+                      )}
+                    </span>
+                    <span className="row-figures">
+                      {workout.sets_completed > 0 &&
+                        `${workout.sets_completed} ${plural(workout.sets_completed, "подход", "подхода", "подходов")} · ${formatNumber(workout.volume)} кг`}
+                    </span>
+                    <StatusPill status={workout.status} />
+                  </a>
                 </li>
               ))}
             </ul>
@@ -606,6 +613,7 @@ function Notes({ clientId }: { clientId: number }) {
   const [confirmDialog, confirm] = useConfirm();
   const notes = useAsync(() => coach.notes(clientId), [clientId]);
   const [text, setText] = useState("");
+  const [shared, setShared] = useState(false);
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState<CoachNote | null>(null);
   const [editText, setEditText] = useState("");
@@ -616,9 +624,11 @@ function Notes({ clientId }: { clientId: number }) {
     setBusy(true);
 
     try {
-      const note = await coach.addNote(clientId, text);
+      const note = await coach.addNote(clientId, text, shared);
       notes.setData([note, ...(notes.data ?? [])]);
       setText("");
+      if (shared) toast.success("Заметка добавлена — клиент её видит");
+      setShared(false);
     } catch (error) {
       toast.error(error);
     } finally {
@@ -631,9 +641,19 @@ function Notes({ clientId }: { clientId: number }) {
     if (!editing || !editText.trim()) return;
 
     try {
-      const updated = await coach.updateNote(editing.id, editText);
+      const updated = await coach.updateNote(editing.id, { text: editText });
       notes.setData((notes.data ?? []).map((note) => (note.id === updated.id ? updated : note)));
       setEditing(null);
+    } catch (error) {
+      toast.error(error);
+    }
+  };
+
+  const toggleShared = async (note: CoachNote) => {
+    try {
+      const updated = await coach.updateNote(note.id, { shared: !note.shared });
+      notes.setData((notes.data ?? []).map((item) => (item.id === updated.id ? updated : item)));
+      toast.success(updated.shared ? "Клиент теперь видит заметку" : "Заметка скрыта от клиента");
     } catch (error) {
       toast.error(error);
     }
@@ -653,7 +673,10 @@ function Notes({ clientId }: { clientId: number }) {
   return (
     <section className="block notes" aria-labelledby="notes-title">
       <h2 className="block-title" id="notes-title">Заметки тренера</h2>
-      <p className="muted small">Видите только вы. Клиенту заметки не показываются.</p>
+      <p className="muted small">
+        Обычные заметки видите только вы. Заметки с отметкой «Видна клиенту» клиент видит у себя
+        на главной и в профиле.
+      </p>
 
       <form className="note-form" onSubmit={add}>
         <textarea
@@ -664,9 +687,19 @@ function Notes({ clientId }: { clientId: number }) {
           value={text}
           onChange={(event) => setText(event.target.value)}
         />
-        <Button variant="primary" type="submit" busy={busy} disabled={!text.trim()}>
-          Добавить заметку
-        </Button>
+        <div className="note-form-row">
+          <label className="toggle">
+            <input
+              type="checkbox"
+              checked={shared}
+              onChange={(event) => setShared(event.target.checked)}
+            />
+            Показать клиенту
+          </label>
+          <Button variant="primary" type="submit" busy={busy} disabled={!text.trim()}>
+            Добавить заметку
+          </Button>
+        </div>
       </form>
 
       {notes.error && <ErrorNote error={notes.error} onRetry={() => void notes.reload()} />}
@@ -674,7 +707,7 @@ function Notes({ clientId }: { clientId: number }) {
       {notes.data && notes.data.length > 0 && (
         <ul className="note-list">
           {notes.data.map((note) => (
-            <li key={note.id} className="note">
+            <li key={note.id} className={note.shared ? "note is-shared" : "note"}>
               {editing?.id === note.id ? (
                 <form className="note-form" onSubmit={save}>
                   <textarea
@@ -698,7 +731,15 @@ function Notes({ clientId }: { clientId: number }) {
                     <time className="note-date" dateTime={note.created_at}>
                       {formatDay(note.created_at.slice(0, 10))}
                     </time>
+                    {note.shared && <span className="note-shared">Видна клиенту</span>}
                     <span className="note-tools">
+                      <button
+                        type="button"
+                        className="note-share"
+                        onClick={() => void toggleShared(note)}
+                      >
+                        {note.shared ? "Скрыть от клиента" : "Показать клиенту"}
+                      </button>
                       <IconButton
                         icon="edit"
                         label="Изменить заметку"

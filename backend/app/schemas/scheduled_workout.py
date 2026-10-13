@@ -115,3 +115,7 @@ class ScheduledWorkoutDetailResponse(WorkoutFeedback):
     scheduled_date: date
     status: WorkoutStatus
     exercises: list[WorkoutExerciseDetail]
+    # комментарий тренера к этой тренировке
+    coach_comment: str | None = None
+    coach_comment_at: datetime | None = None
+    coach_comment_author: str | None = None

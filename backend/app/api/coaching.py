@@ -15,9 +15,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import get_current_user
 from app.database.session import get_session
-from app.models.coaching import CoachClient, CoachingStatus
+from app.models.coaching import CoachClient, CoachingStatus, CoachNote
 from app.models.user import User
-from app.schemas.coach import CoachingState
+from app.schemas.coach import CoachingState, SharedNoteResponse
 
 
 router = APIRouter(prefix="/coaching", tags=["Coaching"])
@@ -60,6 +60,36 @@ async def get_coaching(
 ):
     """Текущий тренер (или null)."""
     return await coaching_state(session, current_user)
+
+
+@router.get("/notes", response_model=list[SharedNoteResponse])
+async def get_shared_notes(
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Заметки, которые текущий тренер отметил «Видна клиенту»,
+    от новых к старым. Без активного тренера — пустой список."""
+    link = await session.scalar(
+        select(CoachClient).where(
+            CoachClient.client_id == current_user.id,
+            CoachClient.status == CoachingStatus.active.value,
+        )
+    )
+
+    if link is None:
+        return []
+
+    return (
+        await session.scalars(
+            select(CoachNote)
+            .where(
+                CoachNote.coach_id == link.coach_id,
+                CoachNote.client_id == current_user.id,
+                CoachNote.shared.is_(True),
+            )
+            .order_by(CoachNote.updated_at.desc(), CoachNote.id.desc())
+        )
+    ).all()
 
 
 @router.post("/end", response_model=CoachingState)

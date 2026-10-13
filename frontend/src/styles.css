@@ -2706,6 +2706,204 @@ textarea {
   gap: 8px;
 }
 
+.note-form-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+}
+
+.note-head {
+  justify-content: flex-start;
+}
+
+.note-tools {
+  margin-left: auto;
+  align-items: center;
+}
+
+.note-shared {
+  padding: 3px 9px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  font: 500 10px/1.2 var(--font-ui);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-light);
+}
+
+.note.is-shared .note-text {
+  color: var(--ivory);
+}
+
+.note-share {
+  margin-right: 6px;
+  padding: 6px 4px;
+  border: 0;
+  background: none;
+  font: 500 11px/1 var(--font-ui);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+  cursor: pointer;
+}
+
+.note-share:hover {
+  color: var(--accent-light);
+}
+
+.row-coach-comment {
+  display: block;
+  margin-top: 4px;
+  font: 400 13px/1.4 var(--font-ui);
+  color: var(--accent-light);
+}
+
+/* Заметки тренера и его комментарий глазами клиента */
+
+.coach-message {
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+}
+
+.coach-message + .coach-message {
+  margin-top: 10px;
+}
+
+.coach-message-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  align-items: baseline;
+  font: 500 11px/1.4 var(--font-ui);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-light);
+}
+
+.coach-message-head time {
+  color: var(--text-faint);
+}
+
+.coach-message-text {
+  margin-top: 8px;
+  white-space: pre-line;
+  color: var(--ivory);
+}
+
+.coach-messages-more {
+  display: inline-block;
+  margin-top: 12px;
+  font-size: 13px;
+}
+
+.comment-form {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+}
+
+.comment-form textarea {
+  width: 100%;
+}
+
+.comment-form-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.page-workout > .coach-message {
+  margin: 0 0 24px;
+}
+
+.cw-comment-tools {
+  margin-top: 12px;
+}
+
+/* Тренировка клиента глазами тренера */
+
+.cw-exercises {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cw-exercise {
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+}
+
+.cw-exercise-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.cw-exercise-name {
+  flex: 1;
+  font: 500 21px/1.25 var(--font-display);
+  color: var(--ivory);
+}
+
+.cw-plan,
+.cw-none {
+  margin: 6px 0 0 42px;
+  font-size: 13px;
+  color: var(--text-soft);
+}
+
+.cw-sets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0 0 42px;
+  padding: 0;
+  list-style: none;
+}
+
+.cw-set {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--field);
+  font-size: 14px;
+  color: var(--ivory);
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.cw-set-number {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.cw-set.is-missed {
+  border-style: dashed;
+  color: var(--text-soft);
+}
+
+.cw-set-flag {
+  font-size: 11px;
+  color: var(--danger);
+}
+
+@media (max-width: 600px) {
+  .cw-plan,
+  .cw-none,
+  .cw-sets {
+    margin-left: 0;
+  }
+}
+
 /* Тренер в профиле клиента */
 
 .coaching-current,

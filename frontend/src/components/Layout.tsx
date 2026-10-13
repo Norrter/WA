@@ -16,7 +16,7 @@ const NAV: { href: string; label: string; match: Route["name"][] }[] = [
 const ADMIN_NAV = { href: "#/admin", label: "Админ", match: ["admin"] as Route["name"][] };
 
 // Раздел видят только тренеры
-const COACH_NAV = { href: "#/coach", label: "Тренер", match: ["coach", "coachUser"] as Route["name"][] };
+const COACH_NAV = { href: "#/coach", label: "Тренер", match: ["coach", "coachUser", "coachWorkout"] as Route["name"][] };
 
 export function Layout({ route, children }: { route: Route; children: ReactNode }) {
   const { user } = useAuth();

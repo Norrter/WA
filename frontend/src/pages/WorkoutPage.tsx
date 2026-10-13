@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { workouts } from "../api";
 import type { WorkoutDetail, WorkoutExerciseDetail, WorkoutStatus } from "../api/types";
 import { FeedbackDialog, FeedbackLine } from "../components/Feedback";
+import { CoachMessage } from "../components/MyCoach";
 import { useScene } from "../components/Scene";
 import { Icon } from "../components/Icon";
 import { PlateBar } from "../components/PlateBar";
@@ -144,6 +145,14 @@ export function WorkoutPage({ id }: { id: number }) {
             {doneSets} из {totalSets} подходов
           </span>
         </div>
+      )}
+
+      {workout.coach_comment && (
+        <CoachMessage
+          label={`Комментарий тренера${workout.coach_comment_author ? ` · ${workout.coach_comment_author}` : ""}`}
+          date={workout.coach_comment_at}
+          text={workout.coach_comment}
+        />
       )}
 
       {workout.exercises.length === 0 && (

@@ -5,6 +5,7 @@ import { useRoute } from "./lib/router";
 import { AdminPage } from "./pages/AdminPage";
 import { CoachPage } from "./pages/CoachPage";
 import { CoachUserPage } from "./pages/CoachUserPage";
+import { CoachWorkoutPage } from "./pages/CoachWorkoutPage";
 import { ExercisePage } from "./pages/ExercisePage";
 import { ExercisesPage } from "./pages/ExercisesPage";
 import { LoginPage } from "./pages/LoginPage";
@@ -64,6 +65,7 @@ export function App() {
       break;
     case "coach":
     case "coachUser":
+    case "coachWorkout":
       if (user.role !== "coach") {
         page = (
           <Empty title="Раздел только для тренера">
@@ -72,8 +74,16 @@ export function App() {
         );
       } else if (route.name === "coach") {
         page = <CoachPage />;
-      } else {
+      } else if (route.name === "coachUser") {
         page = <CoachUserPage key={route.id} id={route.id} />;
+      } else {
+        page = (
+          <CoachWorkoutPage
+            key={`${route.id}-${route.workoutId}`}
+            id={route.id}
+            workoutId={route.workoutId}
+          />
+        );
       }
       break;
     default:

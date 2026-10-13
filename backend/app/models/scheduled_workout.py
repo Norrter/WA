@@ -75,6 +75,17 @@ class ScheduledWorkout(Base):
         nullable=True,
     )
 
+    # Комментарий тренера к тренировке — клиент видит его в тренировке
+    coach_comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    coach_comment_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    coach_comment_by: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
     scheduled_date: Mapped[date] = mapped_column(
         Date,
         nullable=False,

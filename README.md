@@ -157,7 +157,11 @@ Email в приложении не подтверждается, поэтому 
   любая сторона: история тренировок остаётся у клиента, тренер перестаёт
   её видеть.
 - Тренер видит тренировки, подходы, рекорды и графики клиента, но не
-  может их менять. Заметки тренера видит только он сам.
+  может их менять. Любую тренировку клиента (прошедшую или будущую) тренер
+  открывает из карточки клиента и может оставить к ней комментарий —
+  клиент видит его прямо в этой тренировке.
+- Заметки тренера по умолчанию видит только он сам. Заметку с отметкой
+  «Видна клиенту» клиент видит на главной («От тренера») и в профиле.
 
 **Программы тренера.**
 
@@ -223,7 +227,8 @@ Email в приложении не подтверждается, поэтому 
 | Прогресс | `GET /exercises/{id}/history`, `GET /exercises/{id}/records` |
 | Статистика | `GET /stats/summary`, `GET /stats/weekly-volume`, `GET /stats/overview`, `GET /stats/records` |
 | Тренер | `GET/POST /coach/clients`, `DELETE /coach/invitations/{id}`, `GET /coach/clients/{id}` и `.../summary`, `.../weekly-volume`, `.../records`, `.../workouts`, `.../notes`, `POST .../end`, `PATCH/DELETE /coach/notes/{id}` — только для роли `coach` и только свои активные клиенты |
-| Мой тренер | `GET /coaching`, `POST /coaching/end` |
+| Мой тренер | `GET /coaching`, `GET /coaching/notes` (заметки «Видна клиенту»), `POST /coaching/end` |
+| Тренировка клиента (тренер) | `GET /coach/clients/{id}/workouts/{wid}`, `PUT /coach/clients/{id}/workouts/{wid}/comment` (пустой текст удаляет); заметки: `shared` в `POST .../notes` и `PATCH /coach/notes/{id}` |
 | Программы клиента (тренер) | `GET/POST /coach/clients/{id}/programs`, `POST .../programs/{pid}/schedule`, `GET /coach/clients/{id}/overview`, `GET /coach/clients/{id}/exercises/{eid}/history` |
 | Обзор и рекорды | `GET /stats/overview`, `GET /stats/records`; оценка тренировки — поля `wellbeing`, `difficulty`, `feedback_comment` в `PATCH /scheduled-workouts/{id}` |
 
