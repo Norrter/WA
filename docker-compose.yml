@@ -37,6 +37,9 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://workout_user:workout_password@postgres:5432/workout_db
       SECRET_KEY: ${SECRET_KEY:-}
+      # тренеры и админы берутся из .env в корне проекта
+      COACH_EMAILS: ${COACH_EMAILS:-}
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
 
     ports:
       - "8000:8000"
