@@ -75,7 +75,8 @@ export function CoachingSection() {
   );
 }
 
-// Сообщение тренера: заметка для клиента или комментарий к тренировке
+// Сообщение тренера: заметка для клиента или комментарий к тренировке.
+// Оформлено цитатой: кавычка, текст, подпись «— кто · когда».
 export function CoachMessage({
   label,
   date,
@@ -86,13 +87,19 @@ export function CoachMessage({
   text: string;
 }) {
   return (
-    <article className="coach-message">
-      <div className="coach-message-head">
-        <span>{label}</span>
-        {date && <time dateTime={date}>{formatDay(date.slice(0, 10))}</time>}
-      </div>
-      <p className="coach-message-text">{text}</p>
-    </article>
+    <figure className="coach-message">
+      <span className="coach-message-quote" aria-hidden="true">“</span>
+      <blockquote className="coach-message-text">{text}</blockquote>
+      <figcaption className="coach-message-head">
+        — {label}
+        {date && (
+          <>
+            {" · "}
+            <time dateTime={date}>{formatDay(date.slice(0, 10))}</time>
+          </>
+        )}
+      </figcaption>
+    </figure>
   );
 }
 
@@ -108,19 +115,23 @@ export function SharedNotes({ limit, title = "От тренера" }: { limit?: 
   if (!current.coach || notes.length === 0) return null;
 
   const visible = limit ? notes.slice(0, limit) : notes;
-  const author = current.coach.coach.username;
+  const author = `Тренер ${current.coach.coach.username}`.replace(/^Тренер Тренер /, "Тренер ");
 
   return (
     <section className="block shared-notes" aria-labelledby="shared-notes-title">
-      <h2 className="block-title" id="shared-notes-title">{title}</h2>
-      {visible.map((note) => (
-        <CoachMessage key={note.id} label={author} date={note.updated_at} text={note.text} />
-      ))}
-      {limit && notes.length > limit && (
-        <a className="coach-messages-more" href="#/profile">
-          Все заметки тренера ({notes.length})
-        </a>
-      )}
+      <div className="block-head">
+        <h2 className="block-title" id="shared-notes-title">{title}</h2>
+        {limit && (
+          <a className="link-quiet" href="#/profile">
+            Все заметки · {notes.length}
+          </a>
+        )}
+      </div>
+      <div className="coach-messages">
+        {visible.map((note) => (
+          <CoachMessage key={note.id} label={author} date={note.updated_at} text={note.text} />
+        ))}
+      </div>
     </section>
   );
 }

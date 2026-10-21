@@ -8,48 +8,57 @@
    ===================================================================== */
 
 :root {
-  /* палитра: графит и матовое золото */
-  --black: #181818;
-  --charcoal: #1d1d1d;
-  --graphite: #2a2a2a;
-  --marble: #d2d2d2;
-  --ivory: #f4f4f4;
-  --gold: #c9a86a;
-  --gold-light: #dcbf88;
+  /* палитра «Аттическая ваза»: обожжённая глина на чёрном лаке */
+  --black: #0f0b08;
+  --charcoal: #1a140f;
+  --graphite: #2a1d14;
+  --marble: #ead3b8;
+  --ivory: #f3e6d3;
+  --gold: #e8743f;
+  --gold-light: #f09566;
 
   --text: var(--ivory);
-  --text-soft: rgb(245 245 245 / 0.7);
-  --text-faint: rgb(245 245 245 / 0.48);
+  --text-soft: #b39c82;
+  --text-faint: #957f69;
 
-  --line: rgb(255 255 255 / 0.1);
-  --line-strong: rgb(255 255 255 / 0.22);
+  --line: #2a2119;
+  --line-strong: #3a2c20;
+  --border: #2e241b;
+  --border-accent: #5a3420;
 
-  /* плотные поверхности поверх сцены (без эффекта стекла) */
-  --surface: #262626;
-  --surface-2: #303030;
-  --field: #1f1f1f;
+  /* поверхности */
+  --surface: #1a140f;
+  --surface-2: #2a1d14;
+  --field: #0f0b08;
   --veil: var(--surface);
-  --veil-strong: #141414;
+  --veil-strong: #0a0806;
 
-  /* главные кнопки и активные элементы */
-  --accent: #c9a86a;
-  --accent-light: #dcbf88;
-  --accent-soft: rgb(201 168 106 / 0.22);
-  --on-accent: #1a1a1a;
+  /* главные кнопки и активные элементы — терракота */
+  --accent: #e8743f;
+  --accent-light: #f09566;
+  --accent-soft: rgb(232 116 63 / 0.16);
+  --on-accent: #1a0b04;
 
-  --danger: #e5605a;
+  /* холодный цвет: пропуски, не отмеченные тренировки, выход */
+  --blue: #8db4e0;
+  --blue-bg: #121a24;
+  --blue-line: #2e4560;
+  --blue-text: #b9cce3;
+  --on-blue: #0b1622;
 
-  --font-display: "Cormorant Garamond", "Cormorant", Georgia, "Times New Roman", serif;
-  --font-ui: "Jost", "Futura", "Segoe UI", system-ui, sans-serif;
+  --danger: #8db4e0;
+
+  --font-display: "Forum", "Times New Roman", Georgia, serif;
+  --font-ui: "Manrope", "Segoe UI", system-ui, sans-serif;
 
   --gutter: clamp(20px, 6vw, 96px);
   --topbar: 76px;
 
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
 
-  /* скругления: кнопки — капсулы, поля и панели — мягкие углы */
-  --radius-field: 14px;
-  --radius-panel: 22px;
+  /* скругления: строгие, как у керамики — 4–8px */
+  --radius-field: 6px;
+  --radius-panel: 8px;
 
   color-scheme: dark;
 }
@@ -119,7 +128,7 @@ textarea {
 }
 
 ::selection {
-  background: rgb(201 168 106 / 0.4);
+  background: rgb(232 116 63 / 0.4);
   color: var(--ivory);
 }
 
@@ -230,16 +239,16 @@ textarea {
   inset: 0;
   background:
     linear-gradient(90deg,
-      rgb(24 24 24 / 0.95) 0%,
-      rgb(24 24 24 / 0.86) 30%,
-      rgb(24 24 24 / 0.42) 58%,
-      rgb(24 24 24 / 0.12) 100%),
-    radial-gradient(130% 100% at 72% 45%, transparent 50%, rgb(24 24 24 / 0.85) 100%),
+      rgb(15 11 8 / 0.95) 0%,
+      rgb(15 11 8 / 0.86) 30%,
+      rgb(15 11 8 / 0.42) 58%,
+      rgb(15 11 8 / 0.12) 100%),
+    radial-gradient(130% 100% at 72% 45%, transparent 50%, rgb(15 11 8 / 0.85) 100%),
     linear-gradient(180deg,
-      rgb(24 24 24 / 0.6) 0%,
+      rgb(15 11 8 / 0.6) 0%,
       transparent 16%,
       transparent 78%,
-      rgb(24 24 24 / 0.9) 100%);
+      rgb(15 11 8 / 0.9) 100%);
 }
 
 @media (max-width: 900px) {
@@ -260,10 +269,10 @@ textarea {
   .scene-shade {
     background:
       linear-gradient(180deg,
-        rgb(24 24 24 / 0.5) 0%,
-        rgb(24 24 24 / 0.62) 30%,
-        rgb(24 24 24 / 0.88) 58%,
-        rgb(24 24 24 / 0.96) 100%);
+        rgb(15 11 8 / 0.5) 0%,
+        rgb(15 11 8 / 0.62) 30%,
+        rgb(15 11 8 / 0.88) 58%,
+        rgb(15 11 8 / 0.96) 100%);
   }
 }
 
@@ -286,7 +295,7 @@ textarea {
   gap: 48px;
   height: var(--topbar);
   padding: 0 var(--gutter);
-  background: linear-gradient(180deg, rgb(24 24 24 / 0.92), rgb(24 24 24 / 0.55) 70%, transparent);
+  background: linear-gradient(180deg, rgb(15 11 8 / 0.92), rgb(15 11 8 / 0.55) 70%, transparent);
   transition: background-color 0.5s var(--ease), border-color 0.5s var(--ease);
   border-bottom: 1px solid transparent;
 }
@@ -294,7 +303,7 @@ textarea {
 /* После начала прокрутки панель становится плотной, чтобы текст
    не просвечивал под навигацией */
 .topbar.scrolled {
-  background: rgb(24 24 24 / 0.9);
+  background: rgb(15 11 8 / 0.9);
   border-bottom-color: var(--line);
 }
 
@@ -384,7 +393,7 @@ textarea {
   flex-direction: column;
   justify-content: center;
   padding: calc(var(--topbar) + 20px) var(--gutter) 40px;
-  background: rgb(24 24 24 / 0.97);
+  background: rgb(15 11 8 / 0.97);
 }
 
 .menu[hidden] {
@@ -600,17 +609,17 @@ textarea {
 
 .btn-primary {
   border-color: var(--gold);
-  background: rgb(201 168 106 / 0.14);
+  background: rgb(232 116 63 / 0.14);
   color: var(--ivory);
 }
 
 .btn-primary:not(:disabled):hover {
   border-color: var(--gold-light);
-  background: rgb(201 168 106 / 0.3);
+  background: rgb(232 116 63 / 0.3);
 }
 
 .btn-primary:not(:disabled):active {
-  background: rgb(201 168 106 / 0.4);
+  background: rgb(232 116 63 / 0.4);
 }
 
 .btn-secondary {
@@ -632,13 +641,13 @@ textarea {
 }
 
 .btn-danger {
-  border-color: rgb(229 96 90 / 0.45);
+  border-color: rgb(141 180 224 / 0.45);
   color: var(--danger);
 }
 
 .btn-danger:not(:disabled):hover {
   border-color: var(--danger);
-  background: rgb(229 96 90 / 0.1);
+  background: rgb(141 180 224 / 0.1);
 }
 
 .btn-small {
@@ -655,7 +664,7 @@ textarea {
 
 .btn-icon:not(:disabled):hover {
   color: var(--ivory);
-  background: rgb(245 245 245 / 0.06);
+  background: rgb(243 230 211 / 0.06);
 }
 
 .btn-block {
@@ -674,7 +683,7 @@ textarea {
   padding: 10px 14px;
   border: 1px solid var(--line-strong);
   border-radius: 0;
-  background: rgb(24 24 24 / 0.55);
+  background: rgb(15 11 8 / 0.55);
   color: var(--ivory);
   transition: border-color 0.3s var(--ease);
 }
@@ -682,7 +691,7 @@ textarea {
 input:hover,
 select:hover,
 textarea:hover {
-  border-color: rgb(210 210 210 / 0.45);
+  border-color: rgb(234 211 184 / 0.45);
 }
 
 input:focus,
@@ -914,7 +923,7 @@ textarea {
   gap: 18px;
   max-width: 720px;
   padding: 16px 18px;
-  border: 1px solid rgb(229 96 90 / 0.4);
+  border: 1px solid rgb(141 180 224 / 0.4);
   background: var(--veil);
   white-space: pre-line;
 }
@@ -1116,7 +1125,7 @@ textarea {
   gap: 6px;
   min-height: 132px;
   padding: 14px 12px;
-  background: rgb(24 24 24 / 0.35);
+  background: rgb(15 11 8 / 0.35);
 }
 
 .week-day + .week-day {
@@ -1124,7 +1133,7 @@ textarea {
 }
 
 .week-day.is-today {
-  background: rgb(201 168 106 / 0.1);
+  background: rgb(232 116 63 / 0.1);
   box-shadow: inset 0 1px 0 var(--gold);
 }
 
@@ -1377,7 +1386,7 @@ textarea {
 
 .set-check.on {
   border-color: var(--gold);
-  background: rgb(201 168 106 / 0.25);
+  background: rgb(232 116 63 / 0.25);
   color: var(--ivory);
 }
 
@@ -1403,7 +1412,7 @@ textarea {
   display: flex;
   align-items: center;
   border: 1px solid var(--line-strong);
-  background: rgb(24 24 24 / 0.55);
+  background: rgb(15 11 8 / 0.55);
   transition: border-color 0.3s var(--ease);
 }
 
@@ -1426,7 +1435,7 @@ textarea {
 
 .stepper-btn:hover:not(:disabled) {
   color: var(--ivory);
-  background: rgb(245 245 245 / 0.05);
+  background: rgb(243 230 211 / 0.05);
 }
 
 .stepper-btn:disabled {
@@ -1468,7 +1477,7 @@ textarea {
   gap: 10px;
   padding: 20px 14px 14px;
   border: 1px solid var(--line);
-  background: rgb(24 24 24 / 0.45);
+  background: rgb(15 11 8 / 0.45);
 }
 
 .platebar-bar {
@@ -1612,7 +1621,7 @@ textarea {
 }
 
 .rest-done {
-  background: rgb(201 168 106 / 0.35);
+  background: rgb(232 116 63 / 0.35);
 }
 
 @media (max-width: 600px) {
@@ -1651,7 +1660,7 @@ textarea {
   grid-template-columns: repeat(7, minmax(0, 1fr));
   border-top: 1px solid var(--line);
   border-left: 1px solid var(--line);
-  background: rgb(24 24 24 / 0.5);
+  background: rgb(15 11 8 / 0.5);
 }
 
 .calendar-weekday,
@@ -1677,7 +1686,7 @@ textarea {
 }
 
 .calendar-cell.outside {
-  background: rgb(24 24 24 / 0.45);
+  background: rgb(15 11 8 / 0.45);
 }
 
 .calendar-cell.outside .calendar-date {
@@ -1709,7 +1718,7 @@ textarea {
 
 .calendar-cell.is-today {
   box-shadow: inset 0 1px 0 var(--gold);
-  background: rgb(201 168 106 / 0.08);
+  background: rgb(232 116 63 / 0.08);
 }
 
 .calendar-cell.is-today .calendar-date {
@@ -1727,12 +1736,12 @@ textarea {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  background: rgb(245 245 245 / 0.05);
+  background: rgb(243 230 211 / 0.05);
   transition: background-color 0.3s;
 }
 
 .calendar-workout:hover {
-  background: rgb(245 245 245 / 0.12);
+  background: rgb(243 230 211 / 0.12);
   color: var(--ivory);
 }
 
@@ -1799,7 +1808,7 @@ textarea {
 .row-link:hover {
   padding-left: 12px;
   color: var(--ivory);
-  background: linear-gradient(90deg, rgb(201 168 106 / 0.1), transparent 70%);
+  background: linear-gradient(90deg, rgb(232 116 63 / 0.1), transparent 70%);
 }
 
 .row-date {
@@ -1854,7 +1863,7 @@ textarea {
 .program-card:hover {
   padding-left: 14px;
   color: var(--ivory);
-  background: linear-gradient(90deg, rgb(201 168 106 / 0.1), transparent 70%);
+  background: linear-gradient(90deg, rgb(232 116 63 / 0.1), transparent 70%);
 }
 
 .program-name {
@@ -2094,11 +2103,11 @@ textarea {
 }
 
 .records tr.selectable:hover td {
-  background: rgb(245 245 245 / 0.04);
+  background: rgb(243 230 211 / 0.04);
 }
 
 .records tr.selected td {
-  background: linear-gradient(90deg, rgb(201 168 106 / 0.14), transparent);
+  background: linear-gradient(90deg, rgb(232 116 63 / 0.14), transparent);
 }
 
 .records button {
@@ -2138,7 +2147,7 @@ textarea {
 }
 
 .chart-bar {
-  fill: rgb(210 210 210 / 0.32);
+  fill: rgb(234 211 184 / 0.32);
 }
 
 .chart-bar.current {
@@ -2192,7 +2201,7 @@ textarea {
 }
 
 .picker-item:hover {
-  background: rgb(245 245 245 / 0.05);
+  background: rgb(243 230 211 / 0.05);
 }
 
 .picker-item span:first-child {
@@ -2218,7 +2227,7 @@ textarea {
   display: grid;
   place-items: center;
   padding: 16px;
-  background: rgb(24 24 24 / 0.78);
+  background: rgb(15 11 8 / 0.78);
   animation: fade-in 0.3s var(--ease);
 }
 
@@ -2504,18 +2513,18 @@ textarea {
 
 .flag-on_track {
   color: var(--gold-light);
-  border-color: rgb(222 192 135 / 0.5);
+  border-color: rgb(240 149 102 / 0.5);
 }
 
 .flag-check {
   color: var(--danger);
-  border-color: rgb(229 96 90 / 0.55);
-  background: rgb(229 96 90 / 0.08);
+  border-color: rgb(141 180 224 / 0.55);
+  background: rgb(141 180 224 / 0.08);
 }
 
 .flag-progress {
   color: var(--marble);
-  border-color: rgb(210 210 210 / 0.4);
+  border-color: rgb(234 211 184 / 0.4);
 }
 
 .figure-alert dd {
@@ -2543,7 +2552,7 @@ textarea {
 .client-row:hover {
   padding-left: 14px;
   color: var(--ivory);
-  background: linear-gradient(90deg, rgb(201 168 106 / 0.1), transparent 70%);
+  background: linear-gradient(90deg, rgb(232 116 63 / 0.1), transparent 70%);
 }
 
 .client-row .flag {
@@ -2571,7 +2580,7 @@ textarea {
 }
 
 .flag-row-check .client-reasons {
-  color: rgb(229 96 90 / 0.85);
+  color: rgb(141 180 224 / 0.85);
 }
 
 .client-figure {
@@ -2921,7 +2930,7 @@ textarea {
 
 .invitation {
   padding: 18px 20px;
-  border: 1px solid rgb(201 168 106 / 0.45);
+  border: 1px solid rgb(232 116 63 / 0.45);
   border-radius: var(--radius-panel);
   background: var(--veil);
 }
@@ -2942,7 +2951,7 @@ textarea {
   max-width: 720px;
   margin-bottom: 28px;
   padding: 14px 20px;
-  border: 1px solid rgb(201 168 106 / 0.5);
+  border: 1px solid rgb(232 116 63 / 0.5);
   border-radius: 999px;
   background: var(--veil-strong);
   color: var(--ivory);
@@ -3091,7 +3100,7 @@ textarea {
 }
 
 .client-status.flag-row-check {
-  border-color: rgb(229 96 90 / 0.45);
+  border-color: rgb(141 180 224 / 0.45);
 }
 
 .client-status-label {
@@ -3244,7 +3253,7 @@ textarea {
 
 .scale-option.active {
   border-color: var(--gold);
-  background: rgb(201 168 106 / 0.3);
+  background: rgb(232 116 63 / 0.3);
   color: var(--ivory);
 }
 
@@ -3378,7 +3387,7 @@ textarea {
 
 .admin-table-link.active {
   border-color: var(--gold);
-  background: rgb(201 168 106 / 0.18);
+  background: rgb(232 116 63 / 0.18);
   color: var(--ivory);
 }
 
@@ -3395,7 +3404,7 @@ textarea {
   padding: 8px 12px;
   border: 1px solid var(--gold);
   border-radius: 999px;
-  background: rgb(201 168 106 / 0.14);
+  background: rgb(232 116 63 / 0.14);
   font: 500 12px/1 var(--font-ui);
   color: var(--ivory);
   cursor: pointer;
@@ -3546,7 +3555,7 @@ textarea {
 
 .wx-active {
   border-radius: var(--radius-panel);
-  box-shadow: inset 0 0 0 1px rgb(201 168 106 / 0.4);
+  box-shadow: inset 0 0 0 1px rgb(232 116 63 / 0.4);
 }
 
 .day,
@@ -3773,7 +3782,7 @@ textarea {
 
   .calendar-cell.is-today .calendar-date {
     box-shadow: inset 0 0 0 1px var(--gold);
-    background: rgb(201 168 106 / 0.14);
+    background: rgb(232 116 63 / 0.14);
   }
 
   .calendar-workout {
@@ -3872,7 +3881,7 @@ textarea {
   }
 
   .records.stack tr.selected {
-    background: linear-gradient(90deg, rgb(201 168 106 / 0.14), transparent);
+    background: linear-gradient(90deg, rgb(232 116 63 / 0.14), transparent);
   }
 
   .records.stack tr.selected td:first-child {
@@ -3927,11 +3936,11 @@ textarea {
 :root .scene-shade {
   background:
     linear-gradient(90deg,
-      rgb(24 24 24 / 0.97) 0%,
-      rgb(24 24 24 / 0.92) 34%,
-      rgb(24 24 24 / 0.5) 62%,
-      rgb(24 24 24 / 0.18) 100%),
-    linear-gradient(180deg, rgb(24 24 24 / 0.35) 0%, transparent 25%, transparent 70%, rgb(24 24 24 / 0.85) 100%);
+      rgb(15 11 8 / 0.97) 0%,
+      rgb(15 11 8 / 0.92) 34%,
+      rgb(15 11 8 / 0.5) 62%,
+      rgb(15 11 8 / 0.18) 100%),
+    linear-gradient(180deg, rgb(15 11 8 / 0.35) 0%, transparent 25%, transparent 70%, rgb(15 11 8 / 0.85) 100%);
 }
 
 :root body {
@@ -3957,7 +3966,7 @@ textarea {
 
 :root .topbar.scrolled,
 :root .menu {
-  background: #141414;
+  background: var(--veil-strong);
 }
 
 /* Плотные поверхности вместо полупрозрачных */
@@ -4082,7 +4091,7 @@ textarea {
 
 :root .figures div:not(.figure-alert) dd,
 :root .client-percent {
-  color: #f5f5f5;
+  color: var(--ivory);
 }
 
 :root .figures {
@@ -4126,553 +4135,6 @@ textarea {
 
 :root .workout-exercises {
   border-top: 0;
-}
-
-/* =====================================================================
-   Телефон как приложение
-   Сверху: «назад» — заголовок экрана — аватар. Снизу: панель вкладок,
-   «Сегодня» — круглая золотая кнопка в центре, остальное в «Ещё».
-   Фон — ровный графит, статуи только в карточке на главной.
-   ===================================================================== */
-
-.appbar,
-.tabbar {
-  display: none;
-}
-
-.avatar {
-  display: inline-grid;
-  place-items: center;
-  flex-shrink: 0;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: linear-gradient(145deg, var(--accent-light), var(--accent));
-  font: 600 16px/1 var(--font-ui);
-  color: var(--on-accent);
-  text-decoration: none;
-}
-
-.avatar:hover {
-  color: var(--on-accent);
-}
-
-.avatar-large {
-  width: 52px;
-  height: 52px;
-  font-size: 20px;
-}
-
-/* Меню «Ещё» — лист снизу */
-.sheet-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 45;
-  background: rgb(0 0 0 / 0.55);
-  animation: fade-in 0.25s var(--ease);
-}
-
-.sheet {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  max-height: 88vh;
-  overflow-y: auto;
-  padding: 10px 16px calc(20px + env(safe-area-inset-bottom));
-  border-radius: 26px 26px 0 0;
-  background: #222;
-  animation: sheet-in 0.35s var(--ease);
-}
-
-@keyframes sheet-in {
-  from {
-    transform: translateY(100%);
-  }
-}
-
-.sheet-handle {
-  width: 44px;
-  height: 4px;
-  margin: 0 auto 16px;
-  border-radius: 2px;
-  background: var(--line-strong);
-}
-
-.sheet-user {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 16px;
-  padding: 4px 4px 16px;
-  border-bottom: 1px solid var(--line);
-}
-
-.sheet-user strong {
-  display: block;
-  font: 600 18px/1.2 var(--font-ui);
-  color: var(--ivory);
-}
-
-.sheet-user-email {
-  display: block;
-  margin-top: 2px;
-  font-size: 13px;
-  color: var(--text-faint);
-}
-
-.sheet-list {
-  display: grid;
-  gap: 8px;
-}
-
-.sheet-link {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  width: 100%;
-  min-height: 56px;
-  padding: 0 16px;
-  border: 0;
-  border-radius: 16px;
-  background: var(--surface);
-  font: 500 16px/1 var(--font-ui);
-  color: var(--ivory);
-  text-align: left;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.sheet-link > svg:first-child {
-  color: var(--accent);
-}
-
-.sheet-link > svg:last-child:not(:first-child) {
-  margin-left: auto;
-  color: var(--text-faint);
-}
-
-.sheet-link.active {
-  box-shadow: inset 0 0 0 1px var(--accent);
-}
-
-.sheet-link:hover {
-  color: var(--ivory);
-  background: var(--surface-2);
-}
-
-.sheet-logout,
-.sheet-logout > svg:first-child {
-  color: var(--danger);
-}
-
-@media (max-width: 960px) {
-  :root {
-    --gutter: 16px;
-    --appbar: 60px;
-    --tabbar: 66px;
-    --safe-top: env(safe-area-inset-top);
-    --safe-bottom: env(safe-area-inset-bottom);
-  }
-
-  body {
-    background: var(--black);
-  }
-
-  /* Внутри приложения статуи на фоне не нужны: ровный графит.
-     На экране входа статуя остаётся. */
-  :root body.app-shell .scene,
-  :root .topbar,
-  :root .back-link {
-    display: none;
-  }
-
-  /* ----- Верхняя панель ----- */
-
-  :root .appbar {
-    position: fixed;
-    inset: 0 0 auto;
-    z-index: 30;
-    display: grid;
-    grid-template-columns: 40px 1fr 40px;
-    align-items: center;
-    gap: 12px;
-    height: calc(var(--appbar) + var(--safe-top));
-    padding: var(--safe-top) 16px 0;
-    background: var(--black);
-    border-bottom: 1px solid transparent;
-    transition: border-color 0.3s var(--ease);
-  }
-
-  :root .appbar.scrolled {
-    border-bottom-color: var(--line);
-  }
-
-  .appbar-title {
-    overflow: hidden;
-    font: 600 17px/1.2 var(--font-ui);
-    color: var(--ivory);
-    text-align: center;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .appbar-button,
-  .appbar-brand {
-    display: grid;
-    place-items: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: var(--surface);
-    color: var(--ivory);
-    text-decoration: none;
-  }
-
-  .appbar-button:hover {
-    color: var(--ivory);
-  }
-
-  .appbar-brand {
-    font: 700 15px/1 var(--font-display);
-    letter-spacing: 0.02em;
-    color: var(--accent);
-  }
-
-  :root .content {
-    padding:
-      calc(var(--appbar) + var(--safe-top) + 12px)
-      16px
-      calc(var(--tabbar) + var(--safe-bottom) + 36px);
-  }
-
-  /* ----- Нижняя панель вкладок ----- */
-
-  :root .tabbar {
-    position: fixed;
-    inset: auto 0 0;
-    z-index: 30;
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    align-items: end;
-    height: calc(var(--tabbar) + var(--safe-bottom));
-    padding: 0 6px var(--safe-bottom);
-    border-radius: 22px 22px 0 0;
-    background: #212121;
-    box-shadow: 0 -10px 30px rgb(0 0 0 / 0.35);
-  }
-
-  .tab {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    height: var(--tabbar);
-    padding: 0;
-    border: 0;
-    background: none;
-    font: 500 10.5px/1 var(--font-ui);
-    color: var(--text-faint);
-    text-decoration: none;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  .tab:hover {
-    color: var(--text-soft);
-  }
-
-  .tab.active {
-    color: var(--accent);
-  }
-
-  .tab-center {
-    justify-content: flex-end;
-    padding-bottom: 11px;
-  }
-
-  .tab-center-icon {
-    display: grid;
-    place-items: center;
-    width: 56px;
-    height: 56px;
-    margin-top: -26px;
-    border: 5px solid var(--black);
-    border-radius: 50%;
-    background: var(--accent);
-    color: var(--on-accent);
-    box-shadow: 0 8px 20px rgb(201 168 106 / 0.3);
-  }
-
-  .tab-center.active .tab-center-icon {
-    background: var(--accent-light);
-  }
-
-  /* ----- Шапка экрана: заголовок крупно, без линий ----- */
-
-  :root .page,
-  :root .page-wide,
-  :root .page-narrow {
-    max-width: none;
-  }
-
-  :root .page-header {
-    margin-bottom: 22px;
-    padding-bottom: 0;
-    border-bottom: 0;
-  }
-
-  :root .page-header::after {
-    content: none;
-  }
-
-  :root .page-title {
-    font-size: 36px;
-    line-height: 1.02;
-  }
-
-  :root .page-subtitle {
-    margin-top: 8px;
-    font-size: 14px;
-  }
-
-  :root .page-header-row {
-    gap: 16px;
-  }
-
-  :root .block {
-    margin-top: 32px;
-  }
-
-  :root .block-title {
-    margin-bottom: 14px;
-    font-size: 25px;
-  }
-
-  /* ----- Кнопки крупнее под палец ----- */
-
-  :root .btn {
-    min-height: 50px;
-    padding: 0 20px;
-  }
-
-  :root .btn-small {
-    min-height: 40px;
-    padding: 0 16px;
-  }
-
-  :root .btn-icon {
-    min-height: 40px;
-    padding: 0;
-  }
-
-  /* ----- Главная: фото статуи — карточкой, план — карточкой ----- */
-
-  :root .hero {
-    min-height: 0;
-    max-width: none;
-    padding-bottom: 0;
-  }
-
-  :root .hero::before {
-    content: "";
-    display: block;
-    height: 200px;
-    margin-bottom: 20px;
-    border-radius: 24px;
-    background:
-      linear-gradient(180deg, transparent 55%, rgb(24 24 24 / 0.55)),
-      url("/scenes/olympus.jpg") center 14% / cover no-repeat,
-      #2a2a2a;
-  }
-
-  :root .hero-title {
-    font-size: 42px;
-    line-height: 0.98;
-  }
-
-  :root .hero-lead {
-    margin-top: 8px;
-    font-size: 15px;
-  }
-
-  :root .hero-plan {
-    margin-top: 18px;
-    padding: 4px 16px;
-    border: 0;
-    border-radius: 20px;
-    background: var(--surface);
-  }
-
-  :root .hero-plan li {
-    padding: 12px 0;
-    font-size: 14px;
-  }
-
-  :root .hero-plan li:last-child {
-    border-bottom: 0;
-  }
-
-  :root .hero-plan-target {
-    font: 500 14px/1.3 var(--font-ui);
-    color: var(--accent);
-  }
-
-  :root .hero-actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-top: 16px;
-  }
-
-  :root .hero-actions > .btn {
-    width: 100%;
-  }
-
-  :root .hero-actions > .btn-primary:first-child:not(:only-child) {
-    grid-column: 1 / -1;
-  }
-
-  :root .hero-actions > .btn-ghost {
-    border-color: var(--line-strong);
-    background: var(--surface);
-  }
-
-  :root .today-rest {
-    max-width: none;
-    padding-top: 8px;
-  }
-
-  /* Неделя — список карточек: число, день, тренировки справа */
-  :root .week {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 8px;
-    border: 0;
-  }
-
-  :root .week-day {
-    display: grid;
-    grid-template-columns: 38px 28px minmax(0, 1fr);
-    align-items: center;
-    gap: 8px 10px;
-    min-height: 64px;
-    padding: 12px 16px;
-    border: 0;
-    border-radius: 18px;
-    background: var(--surface);
-    box-shadow: none;
-  }
-
-  :root .week-day.is-today {
-    box-shadow: inset 0 0 0 1px var(--accent);
-  }
-
-  :root .week-number {
-    grid-column: 1;
-    grid-row: 1 / span 4;
-    width: auto;
-    font-size: 30px;
-  }
-
-  :root .week-day.is-today .week-number {
-    color: var(--accent);
-  }
-
-  :root .week-name {
-    grid-column: 2;
-    grid-row: 1 / span 4;
-    width: auto;
-  }
-
-  :root .week-rest,
-  :root .week-workout {
-    grid-column: 3;
-    margin: 0;
-  }
-
-  :root .week-rest {
-    text-align: right;
-  }
-
-  :root .week-workout {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-  }
-
-  :root .week-workout-name {
-    font-size: 17px;
-  }
-
-  :root .week-workout .status {
-    flex-shrink: 0;
-  }
-
-  /* ----- Тренировка: действия ровной сеткой ----- */
-
-  :root .workout-footer {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-top: 24px;
-  }
-
-  :root .workout-footer > .btn {
-    width: 100%;
-  }
-
-  :root .workout-footer > .btn:first-child {
-    grid-column: 1 / -1;
-  }
-
-  :root .workout-footer > .btn-danger {
-    grid-column: 1 / -1;
-  }
-
-  /* Таймер отдыха и уведомления — над панелью вкладок */
-  :root .rest {
-    bottom: calc(var(--tabbar) + var(--safe-bottom) + 14px);
-  }
-
-  :root .toasts {
-    left: 16px;
-    right: 16px;
-    bottom: calc(var(--tabbar) + var(--safe-bottom) + 14px);
-    max-width: none;
-  }
-
-  /* ----- Диалоги выезжают снизу ----- */
-
-  :root .modal-backdrop {
-    align-items: end;
-    padding: 0;
-  }
-
-  :root .modal {
-    width: 100%;
-    max-height: 90vh;
-    padding: 22px 18px calc(22px + var(--safe-bottom));
-    border: 0;
-    border-radius: 26px 26px 0 0;
-    background: #222;
-    animation: sheet-in 0.35s var(--ease);
-  }
-
-  :root .modal-head h2 {
-    font-size: 26px;
-  }
-
-  :root .modal-actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-  }
-
-  :root .modal-actions > .btn:only-child {
-    grid-column: 1 / -1;
-  }
 }
 
 /* Сравнение периодов на телефоне: каждая строка — карточка
@@ -4763,4 +4225,1836 @@ textarea {
     padding-left: 14px;
     padding-right: 12px;
   }
+}
+
+/* =====================================================================
+   «Аттическая ваза»
+   Обожжённая глина (#E8743F) на чёрном лаке, меандр полосой,
+   заголовки — Forum прописными, текст — Manrope. Углы строгие,
+   4–8px. Холодный голубой — для пропусков и не отмеченного.
+   ===================================================================== */
+
+body {
+  background: var(--black);
+  font-family: var(--font-ui);
+}
+
+.meander {
+  display: block;
+  color: var(--accent);
+}
+
+/* ----- Заголовки: Forum прописными с разрядкой ----- */
+
+:root .page-title,
+:root .block-title,
+:root .hero-title,
+:root .modal-head h2,
+:root .month-title,
+:root .feature-title,
+:root .wx-card-title,
+:root .auth-title,
+:root .figures dd:not(.figure-note):not(.figure-bar),
+:root .brand {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+:root .page-title {
+  font-size: clamp(32px, 4vw, 48px);
+  line-height: 1.04;
+}
+
+:root .block-title {
+  margin-bottom: 14px;
+  font-size: 22px;
+  letter-spacing: 0.06em;
+}
+
+:root .brand {
+  font-size: 24px;
+  letter-spacing: 0.14em;
+  color: var(--accent-light);
+}
+
+:root .eyebrow {
+  margin-bottom: 6px;
+  font: 700 12px/1.4 var(--font-ui);
+  letter-spacing: 0.16em;
+  color: var(--text-soft);
+}
+
+.section-label {
+  margin: 0 0 10px;
+  font: 700 11px/1.3 var(--font-ui);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.section-label.is-cold {
+  color: var(--blue);
+}
+
+:root .page-header {
+  margin-bottom: 22px;
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+:root .page-header::after {
+  content: none;
+}
+
+:root .page-subtitle {
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--text-soft);
+}
+
+:root .block {
+  margin-top: 28px;
+}
+
+:root .block-head {
+  align-items: baseline;
+  margin-bottom: 14px;
+}
+
+:root .block-head .block-title {
+  margin-bottom: 0;
+}
+
+:root .muted {
+  color: var(--text-soft);
+}
+
+:root .link-quiet {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: 700 13px/1.3 var(--font-ui);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--accent-light);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+:root .link-quiet:hover {
+  color: var(--accent);
+}
+
+/* ----- Кнопки ----- */
+
+:root .btn {
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: 6px;
+  font: 700 14px/1 var(--font-ui);
+  letter-spacing: 0.01em;
+  text-transform: none;
+  text-decoration: none;
+}
+
+:root .btn-primary {
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 800;
+}
+
+:root .btn-primary:not(:disabled):hover {
+  border-color: var(--accent-light);
+  background: var(--accent-light);
+  color: var(--on-accent);
+}
+
+:root .btn-secondary {
+  border: 1px solid var(--border-accent);
+  background: transparent;
+  color: var(--marble);
+}
+
+:root .btn-secondary:not(:disabled):hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--ivory);
+}
+
+:root .btn-ghost {
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--ivory);
+}
+
+:root .btn-danger {
+  border: 1px solid var(--blue-line);
+  background: transparent;
+  color: var(--blue);
+}
+
+:root .btn-danger:not(:disabled):hover {
+  background: var(--blue-bg);
+  color: var(--blue-text);
+}
+
+.btn.btn-cold {
+  border: 1px solid var(--blue);
+  background: var(--blue);
+  color: var(--on-blue);
+  font-weight: 800;
+}
+
+.btn.btn-cold:hover {
+  background: var(--blue-text);
+  color: var(--on-blue);
+}
+
+:root .btn-small {
+  min-height: 40px;
+  padding: 0 14px;
+  font-size: 13px;
+}
+
+:root .btn-icon {
+  min-height: 40px;
+  border-radius: 4px;
+}
+
+:root .btn-block {
+  width: 100%;
+}
+
+/* ----- Поля ----- */
+
+:root input:not([type="checkbox"]):not([type="radio"]),
+:root select,
+:root textarea {
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ivory);
+  font-family: var(--font-ui);
+}
+
+:root input:not([type="checkbox"]):not([type="radio"]):focus,
+:root select:focus,
+:root textarea:focus {
+  border-color: var(--accent);
+}
+
+:root ::placeholder {
+  color: var(--text-faint);
+}
+
+:root .field-label,
+:root .stepper-label {
+  font: 700 11px/1.3 var(--font-ui);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+/* ----- Переключатель периода: залитая плашка ----- */
+
+:root .segmented {
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+}
+
+:root .segmented button {
+  min-height: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  font: 700 13px/1 var(--font-ui);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-soft);
+}
+
+:root .segmented button::after {
+  content: none;
+}
+
+:root .segmented button.active {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+/* ----- Плашки статусов ----- */
+
+:root .status {
+  padding: 6px 10px;
+  border-radius: 4px;
+  font: 800 12px/1 var(--font-ui);
+  letter-spacing: 0.02em;
+  text-transform: none;
+  text-decoration: none;
+}
+
+:root .status::before {
+  content: none;
+}
+
+:root .status-completed {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+:root .status-planned {
+  background: var(--surface-2);
+  color: var(--marble);
+}
+
+:root .status-skipped {
+  background: var(--blue);
+  color: var(--on-blue);
+}
+
+.status-unmarked {
+  border: 1px solid var(--blue-line);
+  background: var(--blue-bg);
+  color: var(--blue);
+}
+
+:root .flag {
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 4px;
+  font: 800 12px/1 var(--font-ui);
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+:root .flag::before {
+  content: none;
+}
+
+:root .flag-on_track {
+  background: var(--surface-2);
+  color: var(--marble);
+}
+
+:root .flag-check {
+  background: var(--blue);
+  color: var(--on-blue);
+}
+
+:root .flag-progress {
+  background: var(--accent-soft);
+  color: var(--accent-light);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip-tag {
+  padding: 6px 10px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  font-size: 12px;
+  color: var(--marble);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  font-size: 12px;
+  color: var(--text-soft);
+}
+
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-dot,
+.month-day-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  box-sizing: border-box;
+  border-radius: 50%;
+}
+
+.legend-dot.is-done,
+.month-day-dot.is-done {
+  background: var(--accent);
+}
+
+.legend-dot.is-planned,
+.month-day-dot.is-planned {
+  border: 1.5px solid var(--marble);
+}
+
+.legend-dot.is-skipped,
+.month-day-dot.is-skipped {
+  background: var(--blue);
+}
+
+.legend-dot.is-unmarked,
+.month-day-dot.is-unmarked {
+  border: 1.5px dashed var(--blue);
+}
+
+/* ----- Карточки и списки ----- */
+
+:root .figures {
+  gap: 10px;
+  border: 0;
+}
+
+:root .figures > div,
+:root .figures > div + div,
+:root .figures-card > div:nth-child(n),
+:root .overview-figures > div:nth-child(n) {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+}
+
+:root .figures dt {
+  font: 500 12px/1.35 var(--font-ui);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-soft);
+}
+
+:root .figures dd:not(.figure-note):not(.figure-bar) {
+  font-size: 32px;
+  line-height: 1.1;
+  color: var(--ivory);
+}
+
+:root .figures dd.figure-text {
+  font-size: 26px;
+}
+
+:root .figures dd small {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  letter-spacing: 0;
+  color: var(--text-soft);
+}
+
+:root .figures dd.figure-accent,
+:root .figures div:not(.figure-alert) dd.figure-accent {
+  color: var(--accent);
+}
+
+:root .figures .trend-up {
+  color: var(--accent-light);
+}
+
+:root .figures .trend-down,
+:root .figure-alert dd:not(.figure-note) {
+  color: var(--blue);
+}
+
+:root .figure-note {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-soft);
+}
+
+.figure-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.figure-bar span {
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+:root .row-link,
+:root .row-item,
+:root .client-row,
+:root .wx,
+:root .program-card,
+:root .day,
+:root .note,
+:root .invitation,
+:root .workout-feedback,
+:root .client-status {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  box-shadow: none;
+}
+
+:root .row-link:hover,
+:root .client-row:hover {
+  border-color: var(--border-accent);
+  background: var(--surface);
+}
+
+:root .row-main,
+:root .client-name {
+  font: 600 15px/1.35 var(--font-ui);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+:root .row-date {
+  font-size: 13px;
+  color: var(--text-soft);
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.panel-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.panel-field .section-label {
+  margin-bottom: 8px;
+}
+
+.panel-field select {
+  width: 100%;
+  min-height: 48px;
+  border-color: var(--border-accent);
+  background: var(--black);
+}
+
+:root .modal {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+:root .toast {
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  background: var(--surface-2);
+}
+
+:root .toast-error {
+  border-left-color: var(--blue);
+}
+
+/* ----- Цитата тренера ----- */
+
+.coach-messages {
+  display: grid;
+  gap: 10px;
+}
+
+:root .coach-message {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+}
+
+.coach-message-quote {
+  height: 20px;
+  font: 48px/0.6 var(--font-display);
+  color: var(--accent-light);
+}
+
+:root .coach-message-text {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: #e6d6c0;
+}
+
+:root .coach-message-head {
+  font: 700 12px/1.4 var(--font-ui);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+}
+
+:root .coach-message-head time {
+  color: inherit;
+}
+
+.page-workout > .coach-message {
+  margin-bottom: 20px;
+}
+
+/* ----- Внимание: холодная карточка ----- */
+
+.attention-list {
+  display: grid;
+  gap: 10px;
+}
+
+.attention {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--blue-line);
+  border-radius: 6px;
+  background: var(--blue-bg);
+}
+
+.attention + .is-refreshing,
+.client-status + .attention {
+  margin-top: 12px;
+}
+
+.attention-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.attention-text strong {
+  font-size: 15px;
+  color: var(--ivory);
+}
+
+.attention-text span {
+  font-size: 13px;
+  color: var(--blue-text);
+}
+
+/* ----- Аватар ----- */
+
+:root .avatar {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  border-radius: 50%;
+  text-decoration: none;
+  width: 44px;
+  height: 44px;
+  background: var(--accent);
+  font: 400 20px/1 var(--font-display);
+  color: var(--on-accent);
+}
+
+:root .avatar:hover {
+  color: var(--on-accent);
+}
+
+:root .avatar-large {
+  width: 56px;
+  height: 56px;
+  font-size: 24px;
+}
+
+.avatar-xl {
+  width: 60px !important;
+  height: 60px !important;
+  font-size: 26px !important;
+}
+
+/* =====================================================================
+   Сегодня
+   ===================================================================== */
+
+.today {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.today > .block {
+  margin-top: 0;
+}
+
+.today-head .eyebrow {
+  margin-bottom: 6px;
+}
+
+.done-today {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 64px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ivory);
+  text-decoration: none;
+}
+
+.done-today:hover {
+  border-color: var(--border-accent);
+  color: var(--ivory);
+}
+
+.done-today > svg {
+  color: var(--text-faint);
+}
+
+.done-today-check {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.done-today-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.done-today-text strong {
+  font-size: 15px;
+}
+
+.done-today-text span {
+  font-size: 13px;
+  color: var(--text-soft);
+}
+
+.week-block .block-head {
+  margin-bottom: 14px;
+}
+
+.week-dots {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+  margin-bottom: 14px;
+}
+
+.week-dots li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.week-dot-name {
+  font: 700 11px/1 var(--font-ui);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.week-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 40px;
+  height: 40px;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  font: 700 15px/1 var(--font-ui);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+  text-decoration: none;
+}
+
+a.week-dot:hover {
+  color: var(--ivory);
+}
+
+.week-dot.is-done {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+a.week-dot.is-done:hover {
+  color: var(--on-accent);
+}
+
+.week-dot.is-planned {
+  border: 1.5px solid var(--marble);
+  color: var(--ivory);
+}
+
+.week-dot.is-unmarked {
+  border: 1.5px dashed var(--blue);
+  color: var(--ivory);
+}
+
+.week-dot.is-skipped {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: var(--on-blue);
+}
+
+.week-dot.is-today {
+  box-shadow: 0 0 0 3px var(--black), 0 0 0 4.5px var(--accent);
+}
+
+.week-dot.is-today.is-rest {
+  color: var(--ivory);
+}
+
+/* Карточка ближайшей тренировки с меандром сверху */
+.feature-card {
+  overflow: hidden;
+  border: 1px solid var(--border-accent);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.feature-body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px 18px 18px;
+}
+
+.feature-head {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.feature-head .eyebrow,
+.feature-body > .eyebrow {
+  margin: 0;
+  font-size: 11px;
+  color: var(--accent-light);
+}
+
+:root .feature-title {
+  margin: 0;
+  font-size: 32px;
+  line-height: 1.05;
+  letter-spacing: 0.03em;
+  color: var(--ivory);
+}
+
+.plan-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  border-top: 1px solid var(--line);
+}
+
+.plan-index {
+  flex-shrink: 0;
+  width: 34px;
+  font: 16px/1 var(--font-display);
+  color: var(--accent-light);
+}
+
+.plan-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.plan-target {
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+:root .btn-start {
+  min-height: 54px;
+  gap: 10px;
+  font-size: 14px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.feature-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+/* =====================================================================
+   Тренировка
+   ===================================================================== */
+
+.workout-when {
+  color: var(--text-soft);
+}
+
+.workout-when.is-completed {
+  color: var(--accent-light);
+}
+
+.workout-when.is-unmarked,
+.workout-when.is-skipped {
+  color: var(--blue);
+}
+
+:root .page-workout .page-header-row {
+  flex-wrap: nowrap;
+  align-items: flex-start;
+}
+
+:root .page-workout .page-header-row > .page-actions {
+  width: auto;
+  flex-shrink: 0;
+}
+
+:root .workout-progress {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  margin: 0 0 20px;
+  font: 500 13px/1.3 var(--font-ui);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-soft);
+}
+
+.workout-progress-labels {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+:root .workout-progress-track {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--line);
+}
+
+:root .workout-progress-fill {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--accent);
+}
+
+.wx-card {
+  padding: 18px;
+  border: 1px solid var(--border-accent);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+:root .logger {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 0;
+  border: 0;
+}
+
+.logger-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wx-card-index {
+  font: 16px/1 var(--font-display);
+  color: var(--accent-light);
+}
+
+:root .wx-card-title {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.1;
+  color: var(--ivory);
+}
+
+:root .logger-plan {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-soft);
+}
+
+:root .logger-notes {
+  margin: 0;
+  padding-left: 10px;
+  border-left: 2px solid var(--border-accent);
+  font-size: 13px;
+  font-style: normal;
+  color: var(--marble);
+}
+
+.sets-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.sets-table th,
+.sets-table td {
+  height: 48px;
+  padding: 0 8px 0 0;
+  border-top: 1px solid var(--line);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.sets-table thead th {
+  height: auto;
+  padding-bottom: 8px;
+  border-top: 0;
+  font: 700 11px/1.2 var(--font-ui);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.sets-table tbody th {
+  width: 44px;
+  font: 400 16px/1 var(--font-display);
+  color: var(--marble);
+}
+
+.sets-prev {
+  font-size: 14px;
+  color: var(--accent-light);
+}
+
+.sets-now {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-faint);
+}
+
+.sets-table tr.is-done .sets-now {
+  color: var(--accent);
+}
+
+.sets-table tr.is-failed .sets-now {
+  color: var(--blue);
+  text-decoration: line-through;
+}
+
+.sets-table tr.is-current td,
+.sets-table tr.is-current th {
+  border-top-color: transparent;
+  background: var(--surface-2);
+}
+
+.sets-table tr.is-current th {
+  border-radius: 4px 0 0 4px;
+  padding-left: 8px;
+}
+
+.sets-table tr.is-current td:last-child {
+  border-radius: 0 4px 4px 0;
+}
+
+.sets-table tr.is-current .sets-now {
+  color: var(--ivory);
+}
+
+.sets-actions {
+  width: 76px;
+  text-align: right !important;
+  white-space: nowrap;
+}
+
+.sets-actions .btn-icon {
+  width: 34px;
+  min-height: 34px;
+  vertical-align: middle;
+  color: var(--text-faint);
+}
+
+:root .set-check {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--blue);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--blue);
+  vertical-align: middle;
+  cursor: pointer;
+}
+
+:root .set-check.on {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+/* Отдых — строкой внутри карточки */
+:root .rest {
+  position: relative;
+  left: auto;
+  bottom: auto;
+  z-index: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 8px 8px 14px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--marble);
+  transform: none;
+  animation: fade-in 0.3s var(--ease);
+}
+
+:root .rest > svg {
+  color: var(--accent-light);
+}
+
+:root .rest-label {
+  flex: 1;
+  font: 500 14px/1 var(--font-ui);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--marble);
+}
+
+:root .rest-time {
+  min-width: 3ch;
+  font: 800 18px/1 var(--font-ui);
+  color: var(--accent-light);
+}
+
+:root .rest-track {
+  height: 2px;
+  background: var(--accent);
+}
+
+:root .rest-done {
+  background: var(--accent-soft);
+}
+
+:root .logger-inputs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+:root .stepper {
+  gap: 6px;
+}
+
+:root .stepper-row {
+  height: 60px;
+  padding: 0 4px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: var(--black);
+}
+
+:root .stepper-btn {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--surface-2);
+  color: var(--ivory);
+}
+
+:root .stepper-input {
+  font: 800 24px/1 var(--font-ui);
+  color: var(--ivory);
+}
+
+:root .btn-log {
+  min-height: 56px;
+  font-size: 15px;
+}
+
+.wx-others {
+  margin-top: 24px;
+}
+
+.wx-list {
+  display: grid;
+  gap: 8px;
+}
+
+.wx-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 64px;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ivory);
+  text-align: left;
+  cursor: pointer;
+}
+
+.wx-row:hover {
+  border-color: var(--border-accent);
+}
+
+.wx-row.is-active {
+  border-color: var(--accent);
+}
+
+.wx-row > svg {
+  flex-shrink: 0;
+  color: var(--text-faint);
+}
+
+:root .wx-row .wx-index {
+  flex-shrink: 0;
+  width: 28px;
+  font: 16px/1 var(--font-display);
+  color: var(--marble);
+}
+
+.wx-row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+:root .wx-row .wx-name {
+  font: 600 15px/1.3 var(--font-ui);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ivory);
+}
+
+.wx-row-note {
+  font-size: 13px;
+  color: var(--text-soft);
+}
+
+.wx-row-check {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+:root .workout-feedback {
+  margin-top: 20px;
+  padding: 16px;
+}
+
+:root .workout-footer {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 24px;
+}
+
+:root .workout-footer > .btn:first-child,
+:root .workout-footer > .btn-danger {
+  grid-column: 1 / -1;
+}
+
+/* =====================================================================
+   Расписание
+   ===================================================================== */
+
+:root .schedule-page .page-header-row > .page-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+}
+
+.calendar-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+:root .calendar-card .month-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0;
+}
+
+:root .calendar-card .month-title {
+  margin: 0;
+  font-size: 22px;
+}
+
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  row-gap: 4px;
+}
+
+.month-weekday {
+  padding-bottom: 4px;
+  font: 700 11px/1 var(--font-ui);
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.month-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 50px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.month-day-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font: 600 15px/1 var(--font-ui);
+  font-variant-numeric: tabular-nums;
+  color: var(--ivory);
+}
+
+.month-day.outside .month-day-number {
+  color: #6e5e50;
+}
+
+.month-day:hover .month-day-number {
+  background: var(--surface-2);
+}
+
+.month-day.is-today .month-day-number {
+  border: 1.5px solid var(--accent);
+}
+
+.month-day.is-selected .month-day-number {
+  border: 0;
+  background: var(--accent);
+  font-weight: 800;
+  color: var(--on-accent);
+}
+
+.month-day-dot {
+  width: 6px;
+  height: 6px;
+}
+
+.calendar-card .legend {
+  justify-content: center;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.day-detail {
+  margin-top: 22px;
+}
+
+.day-empty {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 12px 12px 16px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--text-soft);
+}
+
+.day-workouts {
+  display: grid;
+  gap: 10px;
+}
+
+.day-workout {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+}
+
+.day-workout-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.day-workout h3 {
+  margin: 0 0 4px;
+  font: 700 17px/1.3 var(--font-ui);
+}
+
+/* =====================================================================
+   Карточка клиента
+   ===================================================================== */
+
+.client-hero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.client-hero-text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+:root .client-hero .page-title {
+  font-size: clamp(26px, 3.4vw, 40px);
+  overflow-wrap: anywhere;
+}
+
+.client-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.client-actions .btn {
+  padding: 0 8px;
+}
+
+:root .client-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+}
+
+:root .client-status-text {
+  font-size: 14px;
+  line-height: 1.4;
+  color: #e6d6c0;
+}
+
+.summary-head {
+  flex-wrap: wrap;
+  margin-top: 28px;
+}
+
+/* =====================================================================
+   Телефон и планшет: экран как приложение
+   ===================================================================== */
+
+.appbar,
+.tabbar {
+  display: none;
+}
+
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  background: rgb(5 4 3 / 0.72);
+  animation: fade-in 0.25s var(--ease);
+}
+
+.sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-height: 88vh;
+  overflow-y: auto;
+  padding: 10px 20px calc(28px + env(safe-area-inset-bottom));
+  border-top: 1px solid #33281f;
+  border-radius: 28px 28px 0 0;
+  background: var(--surface);
+  animation: sheet-in 0.35s var(--ease);
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+.sheet-handle {
+  align-self: center;
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--line-strong);
+}
+
+.sheet-user {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.sheet-user strong {
+  display: block;
+  font: 700 17px/1.25 var(--font-ui);
+  color: var(--ivory);
+}
+
+.sheet-user-email {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--text-soft);
+}
+
+.sheet-list {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--black);
+}
+
+.sheet-list li + li {
+  border-top: 1px solid var(--line);
+}
+
+.sheet-link {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 56px;
+  padding: 0 16px;
+  font: 600 15px/1 var(--font-ui);
+  color: var(--ivory);
+  text-decoration: none;
+}
+
+.sheet-link span {
+  flex: 1;
+}
+
+.sheet-link > svg:first-child {
+  color: var(--marble);
+}
+
+.sheet-link > svg:last-child {
+  color: var(--text-faint);
+}
+
+.sheet-link:hover,
+.sheet-link.active {
+  color: var(--accent-light);
+  background: var(--surface);
+}
+
+.sheet-logout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 52px;
+  border: 1px solid var(--blue-line);
+  border-radius: 6px;
+  background: transparent;
+  font: 700 15px/1 var(--font-ui);
+  color: #a9c6e8;
+  cursor: pointer;
+}
+
+.round-button {
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 44px;
+  height: 44px;
+  border: 1px solid #33281f;
+  border-radius: 50%;
+  color: var(--ivory);
+  text-decoration: none;
+}
+
+.round-button:hover {
+  border-color: var(--border-accent);
+  color: var(--ivory);
+}
+
+@media (max-width: 960px) {
+  :root {
+    --gutter: 20px;
+    --tabbar: 70px;
+    --safe-bottom: env(safe-area-inset-bottom);
+  }
+
+  :root body.app-shell .scene,
+  :root .topbar,
+  :root .back-link {
+    display: none;
+  }
+
+  :root .appbar {
+    display: block;
+  }
+
+  .appbar-row {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    align-items: center;
+    gap: 12px;
+    height: 44px;
+    margin: 14px 20px 0;
+  }
+
+  .appbar-row > .avatar {
+    grid-column: 3;
+  }
+
+  .appbar-brand {
+    font: 400 26px/1 var(--font-display);
+    letter-spacing: 0.18em;
+    color: var(--accent-light);
+    text-decoration: none;
+  }
+
+  .appbar-brand:hover {
+    color: var(--accent);
+  }
+
+  .appbar-title {
+    overflow: hidden;
+    font: 700 15px/1.2 var(--font-ui);
+    color: var(--ivory);
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  :root .content {
+    padding: 20px 20px calc(var(--tabbar) + var(--safe-bottom) + 32px);
+  }
+
+  :root .page,
+  :root .page-wide,
+  :root .page-narrow {
+    max-width: none;
+  }
+
+  /* ----- Нижнее меню ----- */
+
+  :root .tabbar {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 30;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    height: calc(var(--tabbar) + var(--safe-bottom));
+    padding-bottom: var(--safe-bottom);
+    border-top: 1px solid var(--line);
+    background: var(--black);
+  }
+
+  .tab {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    height: var(--tabbar);
+    padding: 0;
+    border: 0;
+    background: none;
+    font: 600 11px/1 var(--font-ui);
+    color: #a08a73;
+    text-decoration: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .tab:hover {
+    color: var(--marble);
+  }
+
+  .tab.active {
+    color: var(--accent);
+  }
+
+  .tab.active::before {
+    content: "";
+    position: absolute;
+    top: -1px;
+    left: 50%;
+    margin-left: -12px;
+    width: 24px;
+    height: 3px;
+    border-radius: 0 0 3px 3px;
+    background: var(--accent);
+  }
+
+  /* ----- Шапки экранов ----- */
+
+  :root .page-title {
+    font-size: 32px;
+  }
+
+  :root .page-header-row {
+    gap: 14px;
+  }
+
+  :root .page-header-row > .page-actions {
+    width: 100%;
+  }
+
+  :root .page-actions > .btn {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  :root .page-actions .segmented {
+    width: 100%;
+  }
+
+  /* ----- Диалоги выезжают снизу ----- */
+
+  :root .modal-backdrop {
+    align-items: end;
+    padding: 0;
+    background: rgb(5 4 3 / 0.72);
+  }
+
+  :root .modal {
+    width: 100%;
+    max-height: 90vh;
+    padding: 22px 20px calc(22px + var(--safe-bottom));
+    border-width: 1px 0 0;
+    border-color: #33281f;
+    border-radius: 28px 28px 0 0;
+    animation: sheet-in 0.35s var(--ease);
+  }
+
+  :root .modal-head h2 {
+    font-size: 24px;
+  }
+
+  :root .modal-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  :root .modal-actions > .btn:only-child {
+    grid-column: 1 / -1;
+  }
+
+  :root .toasts {
+    left: 16px;
+    right: 16px;
+    bottom: calc(var(--tabbar) + var(--safe-bottom) + 12px);
+    max-width: none;
+  }
+}
+
+@media (max-width: 600px) {
+  :root .figures,
+  :root .figures-card {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  :root .figures > div {
+    min-width: 0;
+  }
+
+  :root .figures dd:not(.figure-note):not(.figure-bar) {
+    font-size: 28px;
+  }
+
+  .client-actions .btn {
+    font-size: 13px;
+  }
+
+  .sets-actions {
+    width: 64px;
+  }
+
+  .sets-table th,
+  .sets-table td {
+    padding-right: 6px;
+  }
+}
+
+/* Тренировка клиента у тренера — в том же строгом стиле */
+:root .cw-exercise {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+:root .cw-exercise-name {
+  font: 600 15px/1.3 var(--font-ui);
+}
+
+:root .cw-exercise .wx-index {
+  font: 16px/1 var(--font-display);
+  color: var(--accent-light);
+}
+
+:root .cw-set {
+  border-radius: 4px;
+  border-color: var(--line-strong);
+}
+
+:root .cw-set-number {
+  font-family: var(--font-display);
+  font-size: 13px;
+  color: var(--accent-light);
 }

@@ -8,6 +8,7 @@ import {
 } from "react";
 
 import type { WorkoutStatus } from "../api/types";
+import { today as todayISO } from "../lib/dates";
 import { Icon, type IconName } from "./Icon";
 
 type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
@@ -158,14 +159,28 @@ export function useConfirm(): [
   return [dialog, ask];
 }
 
-const STATUS_LABELS: Record<WorkoutStatus, string> = {
+export type DisplayStatus = WorkoutStatus | "unmarked";
+
+const STATUS_LABELS: Record<DisplayStatus, string> = {
   planned: "В плане",
   completed: "Выполнена",
-  skipped: "Пропущена",
+  skipped: "Пропуск",
+  unmarked: "Не отмечена",
 };
 
-export function StatusPill({ status }: { status: WorkoutStatus }) {
-  return <span className={`status status-${status}`}>{STATUS_LABELS[status]}</span>;
+// Тренировка в плане, дата которой прошла, — «не отмечена»
+export function displayStatus(status: WorkoutStatus, date?: string): DisplayStatus {
+  if (status === "planned" && date !== undefined && date < todayISO()) return "unmarked";
+  return status;
+}
+
+export function statusLabel(status: DisplayStatus): string {
+  return STATUS_LABELS[status];
+}
+
+export function StatusPill({ status, date }: { status: WorkoutStatus; date?: string }) {
+  const shown = displayStatus(status, date);
+  return <span className={`status status-${shown}`}>{STATUS_LABELS[shown]}</span>;
 }
 
 export function Loading() {

@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 
-import { workouts } from "../api";
+import { exercises as exercisesApi, workouts } from "../api";
 import type { WorkoutDetail, WorkoutExerciseDetail, WorkoutStatus } from "../api/types";
 import { FeedbackDialog, FeedbackLine } from "../components/Feedback";
 import { CoachMessage } from "../components/MyCoach";
@@ -16,13 +16,15 @@ import {
   Loading,
   Modal,
   PageHeader,
-  StatusPill,
   Stepper,
+  displayStatus,
+  statusLabel,
   useConfirm,
 } from "../components/ui";
-import { relativeDay } from "../lib/dates";
+import { formatDayWithWeekday, relativeDay } from "../lib/dates";
 import { loadExercises } from "../lib/data";
-import { formatDuration, formatNumber, formatReps, formatWeight } from "../lib/format";
+import { formatDuration, formatNumber, formatReps, formatWeight, plural } from "../lib/format";
+import { roman } from "../lib/roman";
 import { navigate } from "../lib/router";
 import { useAsync } from "../lib/useAsync";
 
@@ -115,12 +117,17 @@ export function WorkoutPage({ id }: { id: number }) {
     (sum, item) => sum + Math.min(item.performed_sets.length, item.sets),
     0,
   );
+  const activeIndex = active ? workout.exercises.indexOf(active) : -1;
+  const shown = displayStatus(workout.status, workout.scheduled_date);
 
   return (
     <div className="page page-workout">
       <PageHeader
-        back={{ href: "#/", label: "Сегодня" }}
-        eyebrow={relativeDay(workout.scheduled_date)}
+        eyebrow={
+          <span className={`workout-when is-${shown}`}>
+            {formatDayWithWeekday(workout.scheduled_date)} · {statusLabel(shown)}
+          </span>
+        }
         title={workout.program_day_name}
         subtitle={
           <>
@@ -128,22 +135,31 @@ export function WorkoutPage({ id }: { id: number }) {
             {workout.coach_name && (
               <span className="muted">программа тренера {workout.coach_name}</span>
             )}
-            <StatusPill status={workout.status} />
           </>
+        }
+        actions={
+          workout.status !== "completed" && (
+            <Button small onClick={() => setStatus("completed")}>
+              Завершить
+            </Button>
+          )
         }
       />
 
       {totalSets > 0 && (
         <div className="workout-progress" aria-label={`Сделано ${doneSets} из ${totalSets} подходов`}>
+          <div className="workout-progress-labels">
+            <span>{activeIndex >= 0 ? `Упражнение ${roman(activeIndex + 1)}` : "Подходы"}</span>
+            <span>
+              {doneSets} из {totalSets} подходов
+            </span>
+          </div>
           <div className="workout-progress-track">
             <div
               className="workout-progress-fill"
               style={{ width: `${(doneSets / totalSets) * 100}%` }}
             />
           </div>
-          <span>
-            {doneSets} из {totalSets} подходов
-          </span>
         </div>
       )}
 
@@ -164,54 +180,81 @@ export function WorkoutPage({ id }: { id: number }) {
         </p>
       )}
 
-      <ol className="workout-exercises">
-        {workout.exercises.map((item, index) => {
-          const isActive = active !== undefined && itemKey(item) === itemKey(active);
+      {active && (
+        <section className="wx-card" aria-labelledby="active-exercise-title">
+          <SetLogger
+            key={itemKey(active)}
+            workoutId={workout.id}
+            workoutDate={workout.scheduled_date}
+            item={active}
+            index={activeIndex}
+            isBarbell={equipmentById.get(active.exercise.id) === "Штанга"}
+            onChanged={refresh}
+            rest={
+              rest && (
+                <RestTimer key={rest.key} seconds={rest.seconds} onClose={() => setRest(null)} />
+              )
+            }
+            onLogged={(updated) => {
+              if (updated.rest_seconds) {
+                setRest({ seconds: updated.rest_seconds, key: Date.now() });
+              }
 
-          return (
-            <li
-              key={itemKey(item)}
-              className={`wx ${isActive ? "wx-active" : ""} ${isDone(item) ? "wx-done" : ""}`}
-            >
-              <button
-                type="button"
-                className="wx-head"
-                aria-expanded={isActive}
-                onClick={() => setActiveId(itemKey(item))}
-              >
-                <span className="wx-index">{index + 1}</span>
-                <span className="wx-name">{item.exercise.name}</span>
-                <span className="wx-count">
-                  {item.performed_sets.length}/{item.sets}
-                </span>
-              </button>
+              // Все подходы сделаны — переходим к следующему упражнению
+              if (updated.performed_sets.length + 1 >= updated.sets) {
+                const nextItem = workout.exercises.find(
+                  (other, otherIndex) => otherIndex > activeIndex && !isDone(other),
+                );
+                if (nextItem) {
+                  setActiveId(itemKey(nextItem));
+                  setRest(null);
+                }
+              }
+            }}
+          />
+        </section>
+      )}
 
-              {isActive && (
-                <SetLogger
-                  key={itemKey(item)}
-                  workoutId={workout.id}
-                  item={item}
-                  isBarbell={equipmentById.get(item.exercise.id) === "Штанга"}
-                  onChanged={refresh}
-                  onLogged={(updated) => {
-                    if (item.rest_seconds) {
-                      setRest({ seconds: item.rest_seconds, key: Date.now() });
-                    }
+      {workout.exercises.length > 1 && (
+        <section className="block wx-others" aria-labelledby="others-title">
+          <h2 className="section-label" id="others-title">Все упражнения</h2>
+          <ol className="wx-list">
+            {workout.exercises.map((item, index) => {
+              const isActive = active !== undefined && itemKey(item) === itemKey(active);
+              const done = Math.min(item.performed_sets.length, item.sets);
 
-                    // Все подходы сделаны — переходим к следующему упражнению
-                    if (updated.performed_sets.length + 1 >= updated.sets) {
-                      const nextItem = workout.exercises.find(
-                        (other, otherIndex) => otherIndex > index && !isDone(other),
-                      );
-                      if (nextItem) setActiveId(itemKey(nextItem));
-                    }
-                  }}
-                />
-              )}
-            </li>
-          );
-        })}
-      </ol>
+              return (
+                <li key={itemKey(item)}>
+                  <button
+                    type="button"
+                    className={`wx-row ${isActive ? "is-active" : ""} ${isDone(item) ? "is-done" : ""}`}
+                    aria-current={isActive ? "step" : undefined}
+                    onClick={() => {
+                      setActiveId(itemKey(item));
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                  >
+                    <span className="wx-index">{roman(index + 1)}</span>
+                    <span className="wx-row-main">
+                      <span className="wx-name">{item.exercise.name}</span>
+                      <span className="wx-row-note">
+                        {done} из {item.sets} {plural(item.sets, "подхода", "подходов", "подходов")}
+                      </span>
+                    </span>
+                    {isDone(item) ? (
+                      <span className="wx-row-check" aria-label="Готово">
+                        <Icon name="check" size={14} strokeWidth={3} />
+                      </span>
+                    ) : (
+                      <Icon name="right" size={18} strokeWidth={2} />
+                    )}
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+        </section>
+      )}
 
       {workout.status === "completed" && (
         <section className="workout-feedback" aria-label="Оценка тренировки">
@@ -251,10 +294,6 @@ export function WorkoutPage({ id }: { id: number }) {
         <Button variant="danger" onClick={remove}>Удалить</Button>
       </div>
 
-      {rest && (
-        <RestTimer key={rest.key} seconds={rest.seconds} onClose={() => setRest(null)} />
-      )}
-
       {moving && (
         <MoveDialog
           workout={workout}
@@ -285,29 +324,68 @@ export function WorkoutPage({ id }: { id: number }) {
   );
 }
 
+// Подходы этого упражнения в прошлой тренировке — для колонки «Прошлый раз»
+function usePreviousSets(exerciseId: number, workoutId: number, date: string) {
+  const state = useAsync(() => exercisesApi.history(exerciseId, 60), [exerciseId]);
+
+  if (!state.data) return [];
+
+  const earlier = state.data.find(
+    (item) => item.scheduled_workout_id !== workoutId && item.date <= date,
+  );
+
+  if (!earlier) return [];
+
+  return state.data
+    .filter((item) => item.scheduled_workout_id === earlier.scheduled_workout_id)
+    .sort((a, b) => a.set_number - b.set_number);
+}
+
 function SetLogger({
   workoutId,
+  workoutDate,
   item,
+  index,
   isBarbell,
+  rest,
   onChanged,
   onLogged,
 }: {
   workoutId: number;
+  workoutDate: string;
   item: WorkoutExerciseDetail;
+  index: number;
   isBarbell: boolean;
+  rest: ReactNode;
   onChanged: () => Promise<void>;
   onLogged: (item: WorkoutExerciseDetail) => void;
 }) {
   const toast = useToast();
   const lastSet = item.performed_sets[item.performed_sets.length - 1];
+  const previous = usePreviousSets(item.exercise.id, workoutId, workoutDate);
 
   const [weight, setWeight] = useState(lastSet?.weight ?? item.target_weight ?? 20);
   const [reps, setReps] = useState(lastSet?.reps ?? item.target_reps ?? 10);
   const [busy, setBusy] = useState(false);
 
-  const nextNumber = Math.max(0, ...item.performed_sets.map((set) => set.set_number)) + 1;
+  // Вес с прошлого раза, если в этой тренировке ещё не было подходов
+  const [prefilled, setPrefilled] = useState(false);
 
+  useEffect(() => {
+    if (prefilled || lastSet || previous.length === 0) return;
+    setWeight(previous[0].weight);
+    setReps(previous[0].reps);
+    setPrefilled(true);
+  }, [previous, lastSet, prefilled]);
+
+  const nextNumber = Math.max(0, ...item.performed_sets.map((set) => set.set_number)) + 1;
   const planExerciseId = item.program_exercise_id;
+  const canLog = planExerciseId !== null;
+  const rowsCount = Math.max(
+    item.sets,
+    item.performed_sets.length + (canLog ? 1 : 0),
+    previous.length,
+  );
 
   const logSet = async () => {
     if (planExerciseId === null) return;
@@ -347,56 +425,85 @@ function SetLogger({
     }
   };
 
+  const value = (w: number, r: number) => `${formatNumber(w)} × ${r}`;
+
   return (
     <div className="logger">
-      {planExerciseId === null ? (
-        <p className="logger-plan">
-          Этого упражнения больше нет в программе. Сделанные подходы сохранены в истории.
-        </p>
-      ) : (
-        <p className="logger-plan">
-          План: {item.sets} × {formatReps(item.target_reps, item.target_reps_max)}
-          {item.target_weight !== null && `, ${formatWeight(item.target_weight)}`}
-          {item.rest_seconds !== null && `, отдых ${formatDuration(item.rest_seconds)}`}
-        </p>
-      )}
-      {item.notes && <p className="logger-notes">{item.notes}</p>}
+      <div className="logger-head">
+        <span className="wx-card-index">{roman(index + 1)}</span>
+        <h2 className="wx-card-title" id="active-exercise-title">{item.exercise.name}</h2>
+        {canLog ? (
+          <p className="logger-plan">
+            План {item.sets} × {formatReps(item.target_reps, item.target_reps_max)}
+            {item.target_weight !== null && ` · ${formatWeight(item.target_weight)}`}
+            {item.rest_seconds !== null && ` · отдых ${formatDuration(item.rest_seconds)}`}
+          </p>
+        ) : (
+          <p className="logger-plan">
+            Этого упражнения больше нет в программе. Сделанные подходы сохранены в истории.
+          </p>
+        )}
+        {item.notes && <p className="logger-notes">{item.notes}</p>}
+      </div>
 
-      {item.performed_sets.length > 0 && (
-        <ol className="sets">
-          {item.performed_sets.map((set) => (
-            <li key={set.id} className={`set ${set.completed ? "" : "set-failed"}`}>
-              <span className="set-number">{set.set_number}</span>
-              <span className="set-value">
-                {formatNumber(set.weight)} <small>кг</small> × {set.reps}
-              </span>
-              <button
-                type="button"
-                className={`set-check ${set.completed ? "on" : ""}`}
-                aria-pressed={set.completed}
-                aria-label={set.completed ? "Отметить как не выполненный" : "Отметить как выполненный"}
-                title={set.completed ? "Выполнен" : "Не выполнен"}
-                onClick={() => toggle(set.id, !set.completed)}
-              >
-                <Icon name={set.completed ? "check" : "close"} size={16} />
-              </button>
-              <IconButton icon="trash" label="Удалить подход" onClick={() => remove(set.id)} />
-            </li>
-          ))}
-        </ol>
-      )}
+      <table className="sets-table">
+        <thead>
+          <tr>
+            <th scope="col">Подх.</th>
+            <th scope="col">Прошлый раз</th>
+            <th scope="col">Сегодня</th>
+            <th scope="col"><span className="visually-hidden">Отметка</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {Array.from({ length: rowsCount }, (_, row) => {
+            const set = item.performed_sets[row];
+            const before = previous[row];
+            const isCurrent = !set && canLog && row === item.performed_sets.length;
 
-      {planExerciseId !== null && (
+            return (
+              <tr key={row} className={isCurrent ? "is-current" : set ? (set.completed ? "is-done" : "is-failed") : ""}>
+                <th scope="row">{roman(row + 1)}</th>
+                <td className="sets-prev">{before ? `${value(before.weight, before.reps)} кг` : "—"}</td>
+                <td className="sets-now">
+                  {set ? value(set.weight, set.reps) : isCurrent ? value(weight, reps) : "—"}
+                </td>
+                <td className="sets-actions">
+                  {set && (
+                    <>
+                      <button
+                        type="button"
+                        className={`set-check ${set.completed ? "on" : ""}`}
+                        aria-pressed={set.completed}
+                        aria-label={set.completed ? "Отметить как не выполненный" : "Отметить как выполненный"}
+                        title={set.completed ? "Выполнен" : "Не выполнен"}
+                        onClick={() => toggle(set.id, !set.completed)}
+                      >
+                        <Icon name={set.completed ? "check" : "close"} size={14} strokeWidth={3} />
+                      </button>
+                      <IconButton icon="trash" label="Удалить подход" onClick={() => remove(set.id)} />
+                    </>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+
+      {rest}
+
+      {canLog && (
         <>
           <div className="logger-inputs">
-            <Stepper label="Вес" unit="кг" value={weight} step={2.5} onChange={setWeight} />
+            <Stepper label="Вес, кг" value={weight} step={2.5} onChange={setWeight} />
             <Stepper label="Повторы" value={reps} step={1} min={1} onChange={setReps} />
           </div>
 
           {isBarbell && <PlateBar weight={weight} />}
 
           <Button variant="primary" className="btn-block btn-log" onClick={logSet} busy={busy}>
-            Записать подход {nextNumber}
+            Записать подход {roman(nextNumber)}
           </Button>
         </>
       )}

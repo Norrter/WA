@@ -3,6 +3,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import type { Route } from "../lib/router";
 import { useAuth } from "./Auth";
 import { Icon, type IconName } from "./Icon";
+import { Meander } from "./Meander";
 
 interface NavItem {
   href: string;
@@ -11,29 +12,28 @@ interface NavItem {
   match: Route["name"][];
 }
 
-const TODAY: NavItem = { href: "#/", label: "Сегодня", icon: "today", match: ["today", "workout"] };
-const SCHEDULE: NavItem = { href: "#/schedule", label: "Расписание", icon: "calendar", match: ["schedule"] };
-const PROGRAMS: NavItem = { href: "#/programs", label: "Программы", icon: "programs", match: ["programs", "program"] };
+const TODAY: NavItem = { href: "#/", label: "Сегодня", icon: "dumbbell", match: ["today", "workout"] };
+const SCHEDULE: NavItem = { href: "#/schedule", label: "Расписание", icon: "month", match: ["schedule"] };
+const PROGRAMS: NavItem = { href: "#/programs", label: "Программы", icon: "list", match: ["programs", "program"] };
 const EXERCISES: NavItem = { href: "#/exercises", label: "Упражнения", icon: "dumbbell", match: ["exercises", "exercise"] };
-const PROGRESS: NavItem = { href: "#/progress", label: "Прогресс", icon: "progress", match: ["progress"] };
+const PROGRESS: NavItem = { href: "#/progress", label: "Прогресс", icon: "chart", match: ["progress"] };
 const PROFILE: NavItem = { href: "#/profile", label: "Профиль", icon: "profile", match: ["profile"] };
 
 // Раздел видят только тренеры
 const COACH: NavItem = {
   href: "#/coach",
-  label: "Тренер",
+  label: "Клиенты",
   icon: "coach",
   match: ["coach", "coachUser", "coachWorkout"],
 };
 
 // Админ-панель — только администраторам
-const ADMIN: NavItem = { href: "#/admin", label: "Админ", icon: "admin", match: ["admin"] };
+const ADMIN: NavItem = { href: "#/admin", label: "Админ-панель", icon: "admin", match: ["admin"] };
 
 const NAV = [TODAY, SCHEDULE, PROGRAMS, EXERCISES, PROGRESS, PROFILE];
 
-// Телефон: четыре раздела в нижней панели, «Сегодня» — в центре
-const TABS_LEFT = [SCHEDULE, PROGRAMS];
-const TABS_RIGHT = [PROGRESS];
+// Телефон: четыре раздела в нижней панели, остальное — в «Ещё»
+const TABS = [TODAY, SCHEDULE, PROGRAMS, PROGRESS];
 
 // Заголовок и кнопка «назад» в верхней панели телефона
 function screenOf(route: Route): { title: string; back?: string } {
@@ -110,9 +110,12 @@ export function Layout({ route, children }: { route: Route; children: ReactNode 
     ...(user?.role === "coach" ? [COACH] : []),
     ...(user?.is_admin ? [ADMIN] : []),
   ];
-  const nav = [...NAV, ...extra];
+  const nav = [
+    ...NAV,
+    ...extra.map((item) => ({ ...item, label: item === COACH ? "Тренер" : "Админ" })),
+  ];
   // Всё, что не поместилось в нижнюю панель
-  const more = [EXERCISES, ...extra, PROFILE];
+  const more = [EXERCISES, PROFILE, ...extra];
 
   const isActive = (item: NavItem) => item.match.includes(route.name);
   const moreActive = more.some(isActive);
@@ -126,7 +129,7 @@ export function Layout({ route, children }: { route: Route; children: ReactNode 
       className={`tab ${isActive(item) ? "active" : ""}`}
       aria-current={isActive(item) ? "page" : undefined}
     >
-      <Icon name={item.icon} size={22} />
+      <Icon name={item.icon} size={24} />
       <span>{item.label}</span>
     </a>
   );
@@ -151,38 +154,30 @@ export function Layout({ route, children }: { route: Route; children: ReactNode 
         </nav>
       </header>
 
-      {/* Телефон: назад — заголовок экрана — аватар */}
-      <header className={`appbar ${scrolled ? "scrolled" : ""}`}>
-        {screen.back ? (
-          <a className="appbar-button" href={screen.back} aria-label="Назад">
-            <Icon name="left" size={22} />
+      {/* Телефон: меандр, затем «назад» или логотип — заголовок — аватар */}
+      <header className="appbar">
+        <Meander />
+        <div className="appbar-row">
+          {screen.back ? (
+            <a className="round-button" href={screen.back} aria-label="Назад">
+              <Icon name="left" size={20} strokeWidth={2} />
+            </a>
+          ) : (
+            <a className="appbar-brand" href="#/" aria-label="Greek's Gym, на главную">
+              ΓΓ
+            </a>
+          )}
+          {screen.back && <span className="appbar-title">{screen.title}</span>}
+          <a className="avatar" href="#/profile" aria-label="Профиль">
+            {initial}
           </a>
-        ) : (
-          <a className="appbar-brand" href="#/" aria-label="Greek's Gym, на главную">
-            GG
-          </a>
-        )}
-        <span className="appbar-title">{screen.title}</span>
-        <a className="avatar" href="#/profile" aria-label="Профиль">
-          {initial}
-        </a>
+        </div>
       </header>
 
       <main className="content">{children}</main>
 
-      <nav className="tabbar" aria-label="Разделы">
-        {TABS_LEFT.map(tab)}
-        <a
-          href={TODAY.href}
-          className={`tab tab-center ${isActive(TODAY) ? "active" : ""}`}
-          aria-current={isActive(TODAY) ? "page" : undefined}
-        >
-          <span className="tab-center-icon">
-            <Icon name={TODAY.icon} size={24} />
-          </span>
-          <span>{TODAY.label}</span>
-        </a>
-        {TABS_RIGHT.map(tab)}
+      <nav className="tabbar" aria-label="Основное меню">
+        {TABS.map(tab)}
         <button
           type="button"
           className={`tab ${moreActive || menuOpen ? "active" : ""}`}
@@ -190,7 +185,7 @@ export function Layout({ route, children }: { route: Route; children: ReactNode 
           aria-controls="more-menu"
           onClick={() => setMenuOpen((open) => !open)}
         >
-          <Icon name="menu" size={22} />
+          <Icon name="dots" size={24} />
           <span>Ещё</span>
         </button>
       </nav>
@@ -222,19 +217,17 @@ export function Layout({ route, children }: { route: Route; children: ReactNode 
                       aria-current={isActive(item) ? "page" : undefined}
                     >
                       <Icon name={item.icon} size={22} />
-                      {item.label}
-                      <Icon name="right" size={18} />
+                      <span>{item.label}</span>
+                      <Icon name="right" size={18} strokeWidth={2} />
                     </a>
                   </li>
                 ))}
-                <li>
-                  <button type="button" className="sheet-link sheet-logout" onClick={logout}>
-                    <Icon name="logout" size={22} />
-                    Выйти
-                  </button>
-                </li>
               </ul>
             </nav>
+            <button type="button" className="sheet-logout" onClick={logout}>
+              <Icon name="logout" size={20} />
+              Выйти
+            </button>
           </div>
         </div>
       )}

@@ -1,13 +1,23 @@
+// Расписание: месяц кружками с отметками, выбранный день
+// и тренировки, которые прошли, но не отмечены
+
 import { useState } from "react";
 
 import { workouts } from "../api";
-import type { ProgramDetail, ScheduledWorkout } from "../api/types";
 import { useScene } from "../components/Scene";
-import { Icon } from "../components/Icon";
 import { AutoPlanDialog, PlanWorkoutDialog } from "../components/ScheduleDialogs";
-import { Button, Empty, ErrorNote, IconButton, Loading, PageHeader, StatusPill } from "../components/ui";
+import {
+  Button,
+  displayStatus,
+  ErrorNote,
+  IconButton,
+  Loading,
+  PageHeader,
+  StatusPill,
+} from "../components/ui";
 import {
   addDays,
+  formatDay,
   formatDayWithWeekday,
   fromISO,
   monthTitle,
@@ -20,11 +30,17 @@ import { loadProgramDetails } from "../lib/data";
 import { useAsync } from "../lib/useAsync";
 import { workoutNames } from "../lib/workouts";
 
+function capitalize(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
 export function SchedulePage() {
   useScene("colonnade");
 
   const now = new Date();
+  const todayISO = today();
   const [cursor, setCursor] = useState({ year: now.getFullYear(), month: now.getMonth() });
+  const [selected, setSelected] = useState<string | null>(null);
   const [dialog, setDialog] = useState<
     { kind: "plan"; date?: string } | { kind: "auto" } | null
   >(null);
@@ -40,11 +56,13 @@ export function SchedulePage() {
     [gridStart],
   );
 
-  const shiftMonth = (delta: number) =>
+  const shiftMonth = (delta: number) => {
+    setSelected(null);
     setCursor(({ year, month }) => {
       const date = new Date(year, month + delta, 1);
       return { year: date.getFullYear(), month: date.getMonth() };
     });
+  };
 
   const error = programsState.error ?? workoutsState.error;
 
@@ -66,17 +84,41 @@ export function SchedulePage() {
   if (!programs || !list) return <Loading />;
 
   const programById = new Map(programs.map((program) => [program.id, program]));
-  const monthWorkouts = list.filter(
-    (workout) => fromISO(workout.scheduled_date).getMonth() === cursor.month,
+
+  // Выбранный день: сегодня, если смотрим текущий месяц, иначе 1-е число
+  const selectedDate =
+    selected ?? (fromISO(todayISO).getMonth() === cursor.month ? todayISO : firstOfMonth);
+  const selectedWorkouts = list.filter((workout) => workout.scheduled_date === selectedDate);
+  const unmarked = list.filter(
+    (workout) => workout.status === "planned" && workout.scheduled_date < todayISO,
   );
 
+  const dayState = (date: string) => {
+    const shown = list
+      .filter((workout) => workout.scheduled_date === date)
+      .map((workout) => displayStatus(workout.status, workout.scheduled_date));
+
+    if (shown.includes("completed")) return "done";
+    if (shown.includes("unmarked")) return "unmarked";
+    if (shown.includes("skipped")) return "skipped";
+    if (shown.includes("planned")) return "planned";
+    return "none";
+  };
+
+  const reload = () => {
+    setDialog(null);
+    void workoutsState.reload();
+  };
+
   return (
-    <div className="page page-wide">
+    <div className="page schedule-page">
       <PageHeader
         title="Расписание"
         actions={
           <>
-            <Button onClick={() => setDialog({ kind: "auto" })}>Автоплан</Button>
+            <Button icon="repeat" onClick={() => setDialog({ kind: "auto" })}>
+              Автоплан
+            </Button>
             <Button variant="primary" icon="plus" onClick={() => setDialog({ kind: "plan" })}>
               Запланировать
             </Button>
@@ -84,127 +126,151 @@ export function SchedulePage() {
         }
       />
 
-      <div className="month-nav">
-        <IconButton icon="left" label="Предыдущий месяц" onClick={() => shiftMonth(-1)} />
-        <h2 className="month-title">{monthTitle(cursor.year, cursor.month)}</h2>
-        <IconButton icon="right" label="Следующий месяц" onClick={() => shiftMonth(1)} />
-        <Button
-          small
-          variant="ghost"
-          onClick={() => setCursor({ year: now.getFullYear(), month: now.getMonth() })}
-        >
-          Сегодня
-        </Button>
-      </div>
+      <section className="calendar-card" aria-label="Календарь тренировок">
+        <div className="month-nav">
+          <IconButton icon="left" label="Предыдущий месяц" onClick={() => shiftMonth(-1)} />
+          <h2 className="month-title">{monthTitle(cursor.year, cursor.month)}</h2>
+          <IconButton icon="right" label="Следующий месяц" onClick={() => shiftMonth(1)} />
+        </div>
 
-      <div className="calendar" role="grid" aria-label="Календарь тренировок">
-        {WEEKDAYS_SHORT.map((name) => (
-          <div key={name} className="calendar-weekday" role="columnheader">
-            {name}
-          </div>
-        ))}
-        {Array.from({ length: 42 }, (_, index) => {
-          const date = addDays(gridStart, index);
-          const inMonth = fromISO(date).getMonth() === cursor.month;
-          const dayWorkouts = list.filter((workout) => workout.scheduled_date === date);
+        <div className="month-grid">
+          {WEEKDAYS_SHORT.map((name) => (
+            <span key={name} className="month-weekday" aria-hidden="true">
+              {name}
+            </span>
+          ))}
+          {Array.from({ length: 42 }, (_, index) => {
+            const date = addDays(gridStart, index);
+            const inMonth = fromISO(date).getMonth() === cursor.month;
+            const state = dayState(date);
+            const count = list.filter((workout) => workout.scheduled_date === date).length;
+            const classes = [
+              "month-day",
+              inMonth ? "" : "outside",
+              date === todayISO ? "is-today" : "",
+              date === selectedDate ? "is-selected" : "",
+            ].join(" ");
 
-          return (
-            <div
-              key={date}
-              role="gridcell"
-              className={`calendar-cell ${inMonth ? "" : "outside"} ${date === today() ? "is-today" : ""}`}
-            >
+            return (
               <button
+                key={date}
                 type="button"
-                className="calendar-date"
-                aria-label={`Запланировать на ${formatDayWithWeekday(date)}`}
-                onClick={() => setDialog({ kind: "plan", date })}
+                aria-pressed={date === selectedDate}
+                aria-label={`${formatDayWithWeekday(date)}${count ? `, тренировок: ${count}` : ""}`}
+                className={classes}
+                onClick={() => setSelected(date)}
               >
-                {fromISO(date).getDate()}
-                <Icon name="plus" size={14} />
+                <span className="month-day-number">{fromISO(date).getDate()}</span>
+                <span className={`month-day-dot is-${state}`} aria-hidden="true" />
               </button>
-              {dayWorkouts.map((workout) => (
-                <CalendarWorkout
-                  key={workout.id}
-                  workout={workout}
-                  programs={programById}
-                />
-              ))}
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
 
-      <section className="block">
-        <h2 className="block-title">Тренировки в этом месяце</h2>
-        {monthWorkouts.length === 0 ? (
-          <Empty title="В этом месяце тренировок нет">
-            <p className="muted">Нажмите на число в календаре или используйте автоплан.</p>
-          </Empty>
+        <div className="legend">
+          <span><i className="legend-dot is-done" />выполнена</span>
+          <span><i className="legend-dot is-planned" />в плане</span>
+          <span><i className="legend-dot is-skipped" />пропуск</span>
+          <span><i className="legend-dot is-unmarked" />не отмечена</span>
+        </div>
+      </section>
+
+      <section className="block day-detail" aria-labelledby="day-title">
+        <div className="block-head">
+          <h2 className="block-title" id="day-title">
+            {selectedDate === todayISO
+              ? `Сегодня, ${formatDay(selectedDate)}`
+              : capitalize(formatDayWithWeekday(selectedDate))}
+          </h2>
+          {selectedDate !== todayISO && (
+            <button
+              type="button"
+              className="link-quiet"
+              onClick={() => {
+                setSelected(todayISO);
+                setCursor({ year: now.getFullYear(), month: now.getMonth() });
+              }}
+            >
+              К сегодня
+            </button>
+          )}
+        </div>
+
+        {selectedWorkouts.length === 0 ? (
+          <div className="day-empty">
+            <span>День отдыха</span>
+            <Button small icon="plus" onClick={() => setDialog({ kind: "plan", date: selectedDate })}>
+              Запланировать
+            </Button>
+          </div>
         ) : (
-          <ul className="rows">
-            {monthWorkouts.map((workout) => {
+          <div className="day-workouts">
+            {selectedWorkouts.map((workout) => {
               const { dayName, programName } = workoutNames(workout, programById);
+              const shown = displayStatus(workout.status, workout.scheduled_date);
 
               return (
-                <li key={workout.id}>
-                  <a className="row-link" href={`#/workouts/${workout.id}`}>
-                    <span className="row-date">{formatDayWithWeekday(workout.scheduled_date)}</span>
-                    <span className="row-main">
-                      {dayName}
-                      {programName && <span className="muted"> · {programName}</span>}
-                    </span>
-                    <StatusPill status={workout.status} />
+                <article key={workout.id} className="day-workout">
+                  <div className="day-workout-head">
+                    <div>
+                      <h3>{dayName}</h3>
+                      {programName && <p className="muted small">{programName}</p>}
+                    </div>
+                    <StatusPill status={workout.status} date={workout.scheduled_date} />
+                  </div>
+                  <a className="btn btn-secondary btn-block" href={`#/workouts/${workout.id}`}>
+                    {shown === "completed"
+                      ? "Посмотреть результаты"
+                      : shown === "unmarked"
+                        ? "Отметить задним числом"
+                        : shown === "skipped"
+                          ? "Открыть"
+                          : "Открыть план"}
                   </a>
-                </li>
+                </article>
               );
             })}
-          </ul>
+          </div>
         )}
       </section>
+
+      {unmarked.length > 0 && (
+        <section className="block" aria-labelledby="attention-title">
+          <h2 className="section-label is-cold" id="attention-title">Требует внимания</h2>
+          <div className="attention-list">
+            {unmarked.map((workout) => {
+              const { dayName } = workoutNames(workout, programById);
+
+              return (
+                <div key={workout.id} className="attention">
+                  <div className="attention-text">
+                    <strong>
+                      {capitalize(formatDayWithWeekday(workout.scheduled_date))} · {dayName}
+                    </strong>
+                    <span>Тренировка не отмечена</span>
+                  </div>
+                  <a className="btn btn-cold btn-small" href={`#/workouts/${workout.id}`}>
+                    Отметить
+                  </a>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {dialog?.kind === "plan" && (
         <PlanWorkoutDialog
           programs={programs}
           date={dialog.date}
           onClose={() => setDialog(null)}
-          onDone={() => {
-            setDialog(null);
-            void workoutsState.reload();
-          }}
+          onDone={reload}
         />
       )}
 
       {dialog?.kind === "auto" && (
-        <AutoPlanDialog
-          programs={programs}
-          onClose={() => setDialog(null)}
-          onDone={() => {
-            setDialog(null);
-            void workoutsState.reload();
-          }}
-        />
+        <AutoPlanDialog programs={programs} onClose={() => setDialog(null)} onDone={reload} />
       )}
     </div>
-  );
-}
-
-function CalendarWorkout({
-  workout,
-  programs,
-}: {
-  workout: ScheduledWorkout;
-  programs: Map<number, ProgramDetail>;
-}) {
-  const { dayName, programName } = workoutNames(workout, programs);
-
-  return (
-    <a
-      href={`#/workouts/${workout.id}`}
-      className={`calendar-workout status-${workout.status}`}
-      title={programName ? `${dayName} · ${programName}` : dayName}
-    >
-      {dayName}
-    </a>
   );
 }

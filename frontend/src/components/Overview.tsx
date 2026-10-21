@@ -33,7 +33,12 @@ export function OverviewFigures({ overview }: { overview: PeriodOverview }) {
     <dl className="figures overview-figures">
       <div>
         <dt>Выполнение плана</dt>
-        <dd>{formatPercent(current.adherence)}</dd>
+        <dd className="figure-accent">{formatPercent(current.adherence)}</dd>
+        {current.adherence !== null && (
+          <dd className="figure-bar" aria-hidden="true">
+            <span style={{ width: `${Math.round(Math.min(current.adherence, 1) * 100)}%` }} />
+          </dd>
+        )}
         <dd className="figure-note">
           {current.adherence === null
             ? "плана за период не было"

@@ -71,29 +71,31 @@ export function ProgressPage() {
         </section>
 
         <section className="block" aria-labelledby="exercise-progress-title">
-          <div className="block-head">
-            <h2 className="block-title" id="exercise-progress-title">Прогресс по упражнениям</h2>
+          <h2 className="block-title" id="exercise-progress-title">Прогресс по упражнениям</h2>
+          <div className="panel exercise-panel">
             {records.data.length > 0 && (
-              <select
-                aria-label="Упражнение"
-                value={selected ?? ""}
-                onChange={(event) => setExerciseId(Number(event.target.value))}
-              >
-                {records.data.map((record) => (
-                  <option key={record.exercise_id} value={record.exercise_id}>
-                    {record.exercise_name}
-                  </option>
-                ))}
-              </select>
+              <label className="panel-field">
+                <span className="section-label">Упражнение</span>
+                <select
+                  value={selected ?? ""}
+                  onChange={(event) => setExerciseId(Number(event.target.value))}
+                >
+                  {records.data.map((record) => (
+                    <option key={record.exercise_id} value={record.exercise_id}>
+                      {record.exercise_name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            {selected === null ? (
+              <Empty title="Пока нет выполненных подходов">
+                <p className="muted">Запишите подходы на экране тренировки — здесь появится график.</p>
+              </Empty>
+            ) : (
+              <ExerciseProgress key={selected} exerciseId={selected} since={from} />
             )}
           </div>
-          {selected === null ? (
-            <Empty title="Пока нет выполненных подходов">
-              <p className="muted">Запишите подходы на экране тренировки — здесь появится график.</p>
-            </Empty>
-          ) : (
-            <ExerciseProgress key={selected} exerciseId={selected} since={from} />
-          )}
         </section>
 
         <section className="block" aria-labelledby="key-title">
@@ -150,7 +152,7 @@ export function ProgressPage() {
                       {workout.day_name ?? "Тренировка"}
                       <FeedbackLine feedback={workout} />
                     </span>
-                    <StatusPill status={workout.status} />
+                    <StatusPill status={workout.status} date={workout.scheduled_date} />
                   </a>
                 </li>
               ))}

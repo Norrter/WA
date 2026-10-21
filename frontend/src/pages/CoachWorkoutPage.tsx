@@ -12,6 +12,7 @@ import { useToast } from "../components/Toast";
 import { Button, Empty, ErrorNote, Loading, PageHeader, StatusPill } from "../components/ui";
 import { formatDayWithWeekday, today } from "../lib/dates";
 import { formatNumber, formatReps, formatWeight } from "../lib/format";
+import { roman } from "../lib/roman";
 import { useAsync } from "../lib/useAsync";
 
 export function CoachWorkoutPage({ id, workoutId }: { id: number; workoutId: number }) {
@@ -54,7 +55,7 @@ export function CoachWorkoutPage({ id, workoutId }: { id: number; workoutId: num
         subtitle={
           <>
             {workout.program_name}
-            <StatusPill status={workout.status} />
+            <StatusPill status={workout.status} date={workout.scheduled_date} />
           </>
         }
       />
@@ -124,7 +125,7 @@ function ExerciseResult({ item, index }: { item: WorkoutExerciseDetail; index: n
   return (
     <li className="cw-exercise">
       <div className="cw-exercise-head">
-        <span className="wx-index">{index + 1}</span>
+        <span className="wx-index">{roman(index + 1)}</span>
         <span className="cw-exercise-name">{item.exercise.name}</span>
         <span className="wx-count">
           {done}/{item.sets}
@@ -137,7 +138,7 @@ function ExerciseResult({ item, index }: { item: WorkoutExerciseDetail; index: n
         <ol className="cw-sets">
           {item.performed_sets.map((set) => (
             <li key={set.id} className={set.completed ? "cw-set" : "cw-set is-missed"}>
-              <span className="cw-set-number">{set.set_number}</span>
+              <span className="cw-set-number">{roman(set.set_number)}</span>
               {formatWeight(set.weight)} × {set.reps}
               {!set.completed && <span className="cw-set-flag">не выполнен</span>}
             </li>

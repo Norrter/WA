@@ -30,7 +30,6 @@ import {
   IconButton,
   Loading,
   Modal,
-  PageHeader,
   StatusPill,
   useConfirm,
 } from "../components/ui";
@@ -46,6 +45,13 @@ import {
 import { formatNumber, formatWeight, plural } from "../lib/format";
 import { navigate } from "../lib/router";
 import { useAsync } from "../lib/useAsync";
+
+// Плавно прокрутить к разделу; focus — сразу поставить курсор в поле
+function scrollToId(elementId: string, focus = false) {
+  const element = document.getElementById(elementId);
+  element?.scrollIntoView({ behavior: "smooth", block: "center" });
+  if (focus && element instanceof HTMLElement) element.focus({ preventScroll: true });
+}
 
 export function CoachUserPage({ id }: { id: number }) {
   useScene("throne");
@@ -111,6 +117,10 @@ export function CoachUserPage({ id }: { id: number }) {
   const reasons = reasonsText(metrics);
   const selected =
     exerciseId ?? overview.key_exercises[0]?.exercise_id ?? records.data[0]?.exercise_id ?? null;
+  // Прошедшие тренировки, которые клиент так и не отметил
+  const unmarked = workouts.filter(
+    (workout) => workout.status === "planned" && workout.scheduled_date < now,
+  );
 
   const endCooperation = async () => {
     const agreed = await confirm(
@@ -131,20 +141,28 @@ export function CoachUserPage({ id }: { id: number }) {
 
   return (
     <div className="page">
-      <PageHeader
-        back={{ href: "#/coach", label: "Все клиенты" }}
-        eyebrow={
-          link.responded_at
-            ? `Клиент · с ${formatDay(link.responded_at.slice(0, 10))}`
-            : "Клиент"
-        }
-        title={client.username}
-        subtitle={client.email}
-        actions={<PeriodSwitch weeks={weeks} onChange={setWeeks} />}
-      />
+      <header className="client-hero">
+        <span className="avatar avatar-xl" aria-hidden="true">
+          {client.username.trim().charAt(0).toUpperCase()}
+        </span>
+        <div className="client-hero-text">
+          <h1 className="page-title">{client.username}</h1>
+          <p className="muted small">
+            {client.email}
+            {link.responded_at && ` · клиент с ${formatDay(link.responded_at.slice(0, 10))}`}
+          </p>
+        </div>
+      </header>
+
+      <div className="client-actions">
+        <Button variant="primary" onClick={() => scrollToId("new-note", true)}>
+          Заметка
+        </Button>
+        <Button onClick={() => setAssigning(true)}>Программа</Button>
+        <Button onClick={() => scrollToId("upcoming-title")}>Расписание</Button>
+      </div>
 
       <div className={`client-status flag-row-${metrics.flag}`}>
-        <span className="client-status-label">Статус</span>
         <FlagBadge metrics={metrics} />
         <span className="client-status-text">
           {reasons
@@ -155,7 +173,28 @@ export function CoachUserPage({ id }: { id: number }) {
         </span>
       </div>
 
+      {unmarked.length > 0 && (
+        <div className="attention">
+          <div className="attention-text">
+            <strong>
+              {unmarked.length}{" "}
+              {plural(unmarked.length, "тренировка не отмечена", "тренировки не отмечены", "тренировок не отмечено")}
+            </strong>
+            <span>
+              {formatDayWithWeekday(unmarked[0].scheduled_date)} · {unmarked[0].day_name}
+            </span>
+          </div>
+          <a className="btn btn-cold btn-small" href={`#/coach/clients/${id}/workouts/${unmarked[0].id}`}>
+            Открыть
+          </a>
+        </div>
+      )}
+
       <div className={period.loading ? "is-refreshing" : ""}>
+        <div className="block-head summary-head">
+          <h2 className="block-title">Сводка</h2>
+          <PeriodSwitch weeks={weeks} onChange={setWeeks} />
+        </div>
         <dl className="figures figures-card">
           <div>
             <dt>Выполнено / запланировано</dt>
@@ -275,7 +314,7 @@ export function CoachUserPage({ id }: { id: number }) {
                       {workout.day_name}
                       <span className="row-note">{workout.program_name}</span>
                     </span>
-                    <StatusPill status={workout.status} />
+                    <StatusPill status={workout.status} date={workout.scheduled_date} />
                   </a>
                 </li>
               ))}
@@ -307,7 +346,7 @@ export function CoachUserPage({ id }: { id: number }) {
                       {workout.sets_completed > 0 &&
                         `${workout.sets_completed} ${plural(workout.sets_completed, "подход", "подхода", "подходов")} · ${formatNumber(workout.volume)} кг`}
                     </span>
-                    <StatusPill status={workout.status} />
+                    <StatusPill status={workout.status} date={workout.scheduled_date} />
                   </a>
                 </li>
               ))}
@@ -683,6 +722,7 @@ function Notes({ clientId }: { clientId: number }) {
           rows={3}
           maxLength={5000}
           placeholder="Как прошла встреча, самочувствие, что поменять в плане…"
+          id="new-note"
           aria-label="Новая заметка"
           value={text}
           onChange={(event) => setText(event.target.value)}
