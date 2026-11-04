@@ -4,6 +4,8 @@ import type { Route } from "../lib/router";
 import { useAuth } from "./Auth";
 import { Icon, type IconName } from "./Icon";
 import { Meander } from "./Meander";
+import { ThemeChoices, ThemeToggle } from "./ThemeSwitch";
+import { VerifyEmailBanner } from "./VerifyEmailBanner";
 
 interface NavItem {
   href: string;
@@ -17,6 +19,7 @@ const SCHEDULE: NavItem = { href: "#/schedule", label: "Расписание", i
 const PROGRAMS: NavItem = { href: "#/programs", label: "Программы", icon: "list", match: ["programs", "program"] };
 const EXERCISES: NavItem = { href: "#/exercises", label: "Упражнения", icon: "dumbbell", match: ["exercises", "exercise"] };
 const PROGRESS: NavItem = { href: "#/progress", label: "Прогресс", icon: "chart", match: ["progress"] };
+const NUTRITION: NavItem = { href: "#/nutrition", label: "Питание", icon: "food", match: ["nutrition"] };
 const PROFILE: NavItem = { href: "#/profile", label: "Профиль", icon: "profile", match: ["profile"] };
 
 // Раздел видят только тренеры
@@ -24,13 +27,13 @@ const COACH: NavItem = {
   href: "#/coach",
   label: "Клиенты",
   icon: "coach",
-  match: ["coach", "coachUser", "coachWorkout"],
+  match: ["coach", "coachUser", "coachWorkout", "leads"],
 };
 
 // Админ-панель — только администраторам
 const ADMIN: NavItem = { href: "#/admin", label: "Админ-панель", icon: "admin", match: ["admin"] };
 
-const NAV = [TODAY, SCHEDULE, PROGRAMS, EXERCISES, PROGRESS, PROFILE];
+const NAV = [TODAY, SCHEDULE, PROGRAMS, EXERCISES, PROGRESS, NUTRITION, PROFILE];
 
 // Телефон: четыре раздела в нижней панели, остальное — в «Ещё»
 const TABS = [TODAY, SCHEDULE, PROGRAMS, PROGRESS];
@@ -54,6 +57,8 @@ function screenOf(route: Route): { title: string; back?: string } {
       return { title: "Упражнение", back: "#/exercises" };
     case "progress":
       return { title: "Прогресс" };
+    case "nutrition":
+      return { title: "Питание" };
     case "profile":
       return { title: "Профиль" };
     case "coach":
@@ -64,6 +69,8 @@ function screenOf(route: Route): { title: string; back?: string } {
       return { title: "Тренировка клиента", back: `#/coach/clients/${route.id}` };
     case "admin":
       return { title: "Админ-панель" };
+    case "leads":
+      return { title: "Заявки", back: "#/coach" };
     default:
       return { title: "Greek's Gym", back: "#/" };
   }
@@ -115,7 +122,7 @@ export function Layout({ route, children }: { route: Route; children: ReactNode 
     ...extra.map((item) => ({ ...item, label: item === COACH ? "Тренер" : "Админ" })),
   ];
   // Всё, что не поместилось в нижнюю панель
-  const more = [EXERCISES, PROFILE, ...extra];
+  const more = [EXERCISES, NUTRITION, PROFILE, ...extra];
 
   const isActive = (item: NavItem) => item.match.includes(route.name);
   const moreActive = more.some(isActive);
@@ -152,6 +159,7 @@ export function Layout({ route, children }: { route: Route; children: ReactNode 
             </a>
           ))}
         </nav>
+        <ThemeToggle />
       </header>
 
       {/* Телефон: меандр, затем «назад» или логотип — заголовок — аватар */}
@@ -164,7 +172,7 @@ export function Layout({ route, children }: { route: Route; children: ReactNode 
             </a>
           ) : (
             <a className="appbar-brand" href="#/" aria-label="Greek's Gym, на главную">
-              ΓΓ
+              Greek's Gym
             </a>
           )}
           {screen.back && <span className="appbar-title">{screen.title}</span>}
@@ -174,7 +182,10 @@ export function Layout({ route, children }: { route: Route; children: ReactNode 
         </div>
       </header>
 
-      <main className="content">{children}</main>
+      <main className="content">
+        {user && !user.email_verified && <VerifyEmailBanner email={user.email} />}
+        {children}
+      </main>
 
       <nav className="tabbar" aria-label="Основное меню">
         {TABS.map(tab)}
@@ -224,6 +235,10 @@ export function Layout({ route, children }: { route: Route; children: ReactNode 
                 ))}
               </ul>
             </nav>
+            <div className="sheet-theme">
+              <span className="section-label">Тема</span>
+              <ThemeChoices />
+            </div>
             <button type="button" className="sheet-logout" onClick={logout}>
               <Icon name="logout" size={20} />
               Выйти

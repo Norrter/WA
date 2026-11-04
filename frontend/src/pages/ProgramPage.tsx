@@ -32,7 +32,7 @@ type Dialog =
   | { kind: "editExercise"; day: ProgramDay; item: ProgramExercise };
 
 export function ProgramPage({ id }: { id: number }) {
-  useScene("pillars");
+  useScene("colonnade");
 
   const me = useUser();
   const toast = useToast();

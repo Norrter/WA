@@ -93,7 +93,9 @@ async def exercise_history(
             "scheduled_workout_id": workout_set.scheduled_workout_id,
             "date": scheduled_date,
             "set_number": workout_set.set_number,
-            "weight": workout_set.weight,
+            # нагрузка с учётом веса тела; введённое значение — entered_weight
+            "weight": workout_set.load,
+            "entered_weight": workout_set.weight,
             "reps": workout_set.reps,
             "completed": workout_set.completed,
         }
@@ -118,14 +120,14 @@ def build_records(exercise_id: int, rows) -> dict:
 
     for workout_set, scheduled_date in rows:
         record = {
-            "weight": workout_set.weight,
+            "weight": workout_set.load,
             "reps": workout_set.reps,
             "date": scheduled_date,
         }
 
         # При равном весе рекордом считается подход с большим числом повторов
         if max_weight is None or (
-            workout_set.weight,
+            workout_set.load,
             workout_set.reps,
         ) > (
             max_weight["weight"],
@@ -133,7 +135,7 @@ def build_records(exercise_id: int, rows) -> dict:
         ):
             max_weight = record
 
-        estimated = estimate_1rm(workout_set.weight, workout_set.reps)
+        estimated = estimate_1rm(workout_set.load, workout_set.reps)
 
         if best_1rm is None or estimated > best_1rm:
             best_1rm = estimated
@@ -144,7 +146,7 @@ def build_records(exercise_id: int, rows) -> dict:
         "total_sets": len(rows),
         "total_reps": sum(workout_set.reps for workout_set, _ in rows),
         "total_volume": sum(
-            workout_set.weight * workout_set.reps
+            workout_set.load * workout_set.reps
             for workout_set, _ in rows
         ),
         "last_performed": rows[-1][1] if rows else None,
@@ -242,7 +244,7 @@ async def stats_summary(
         "total_sets": len(sets),
         "total_reps": sum(workout_set.reps for workout_set in sets),
         "total_volume": sum(
-            workout_set.weight * workout_set.reps
+            workout_set.load * workout_set.reps
             for workout_set in sets
         ),
     }
@@ -287,7 +289,7 @@ async def weekly_volume(
         week["workout_ids"].add(workout_set.scheduled_workout_id)
         week["sets"] += 1
         week["reps"] += workout_set.reps
-        week["volume"] += workout_set.weight * workout_set.reps
+        week["volume"] += workout_set.load * workout_set.reps
 
     return [
         {

@@ -38,7 +38,11 @@ async def test_program_exercise_crud(client, alice, setup):
     assert item["target_reps"] == 8
     assert item["target_weight"] == 60
     assert item["notes"] == "Пауза внизу"
-    assert item["exercise"] == {"id": exercise["id"], "name": exercise["name"]}
+    assert item["exercise"] == {
+        "id": exercise["id"],
+        "name": exercise["name"],
+        "load_type": "external",
+    }
 
     response = await client.get(base, headers=alice)
     assert response.json() == [item]

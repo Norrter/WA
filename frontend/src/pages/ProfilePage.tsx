@@ -5,6 +5,7 @@ import { useScene } from "../components/Scene";
 import { useAuth, useUser } from "../components/Auth";
 import { CoachingSection, SharedNotes } from "../components/MyCoach";
 import { useToast } from "../components/Toast";
+import { ThemeChoices } from "../components/ThemeSwitch";
 import { Button, Field, PageHeader, useConfirm } from "../components/ui";
 
 export function ProfilePage() {
@@ -17,6 +18,9 @@ export function ProfilePage() {
 
   const [username, setUsername] = useState(user.username);
   const [email, setEmail] = useState(user.email);
+  const [bodyWeight, setBodyWeight] = useState(
+    user.body_weight !== null ? String(user.body_weight).replace(".", ",") : "",
+  );
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [busy, setBusy] = useState<"profile" | "password" | null>(null);
@@ -26,7 +30,8 @@ export function ProfilePage() {
     setBusy("profile");
 
     try {
-      setUser(await users.update({ username, email }));
+      const weight = bodyWeight.trim() ? Number(bodyWeight.replace(",", ".")) : null;
+      setUser(await users.update({ username, email, body_weight: weight }));
       toast.success("Профиль сохранён");
     } catch (error) {
       toast.error(error);
@@ -82,6 +87,18 @@ export function ProfilePage() {
           <Field label="Email">
             <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
           </Field>
+          <Field
+            label="Вес тела, кг"
+            hint="Нужен для подтягиваний, брусьев и гравитрона: нагрузка считается от веса тела."
+          >
+            <input
+              inputMode="decimal"
+              pattern="[0-9]+([.,][0-9]+)?"
+              placeholder="например, 78,5"
+              value={bodyWeight}
+              onChange={(e) => setBodyWeight(e.target.value)}
+            />
+          </Field>
           <div>
             <Button variant="primary" type="submit" busy={busy === "profile"}>Сохранить</Button>
           </div>
@@ -117,6 +134,14 @@ export function ProfilePage() {
             <Button type="submit" busy={busy === "password"}>Сменить пароль</Button>
           </div>
         </form>
+      </section>
+
+      <section className="block" aria-labelledby="theme-title">
+        <h2 className="block-title" id="theme-title">Оформление</h2>
+        <div className="panel">
+          <ThemeChoices label="Тема оформления" />
+          <p className="muted small">«Как в системе» — тема меняется вместе с настройкой телефона или компьютера.</p>
+        </div>
       </section>
 
       <section className="danger-zone">

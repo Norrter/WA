@@ -3,6 +3,7 @@ import { useState, type FormEvent } from "react";
 import { programs as programsApi } from "../api";
 import type { ProgramDetail } from "../api/types";
 import { useUser } from "../components/Auth";
+import { Icon } from "../components/Icon";
 import { useScene } from "../components/Scene";
 import { useToast } from "../components/Toast";
 import { Button, Empty, ErrorNote, Field, Loading, Modal, PageHeader } from "../components/ui";
@@ -12,7 +13,7 @@ import { navigate } from "../lib/router";
 import { useAsync } from "../lib/useAsync";
 
 export function ProgramsPage() {
-  useScene("pillars");
+  useScene("colonnade");
 
   const me = useUser();
   const { data: loaded, error, loading, reload } = useAsync(
@@ -73,9 +74,16 @@ export function ProgramsPage() {
                           <span key={day.id} className="program-day-tag">{day.name}</span>
                         ))}
                   </span>
-                  <span className="muted">
-                    {program.days.length} {plural(program.days.length, "день", "дня", "дней")},{" "}
-                    {exerciseCount} {plural(exerciseCount, "упражнение", "упражнения", "упражнений")}
+                  <span className="program-meta">
+                    <span>
+                      <Icon name="calendar" size={18} />
+                      {program.days.length} {plural(program.days.length, "день", "дня", "дней")}
+                    </span>
+                    <span aria-hidden="true">·</span>
+                    <span>
+                      <Icon name="dumbbell" size={18} />
+                      {exerciseCount} {plural(exerciseCount, "упражнение", "упражнения", "упражнений")}
+                    </span>
                   </span>
                 </a>
               </li>
@@ -107,6 +115,7 @@ export function ProgramsPage() {
                       <span key={day.id} className="program-day-tag">{day.name}</span>
                     ))}
                   </span>
+                  <span className="program-card-arrow"><Icon name="right" size={22} /></span>
                 </button>
               </li>
             ))}

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, func
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
@@ -8,6 +8,13 @@ from app.models.base import Base
 
 class Exercise(Base):
     __tablename__ = "exercises"
+
+    __table_args__ = (
+        CheckConstraint(
+            "load_type IN ('external', 'bodyweight', 'assisted')",
+            name="ck_exercises_load_type",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(
         primary_key=True,
@@ -39,6 +46,15 @@ class Exercise(Base):
     equipment: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,
+    )
+
+    # Как считать нагрузку: вес снаряда, свой вес + доп. вес или свой вес
+    # с облегчением (гравитрон). Подробнее — app/core/load.py
+    load_type: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default="external",
+        server_default="external",
     )
 
     created_at: Mapped[datetime] = mapped_column(

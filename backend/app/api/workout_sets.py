@@ -4,12 +4,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.helpers import apply_changes, get_owned_workout
 from app.core.dependencies import get_current_user
+from app.core.load import compute_load, uses_body_weight
 from app.database.session import get_session
+from app.models.exercise import Exercise
 from app.models.program_day import ProgramDay
 from app.models.program_exercise import ProgramExercise
 from app.models.scheduled_workout import ScheduledWorkout
 from app.models.user import User
+from app.models.workout_exercise import WorkoutExercise
 from app.models.workout_set import WorkoutSet
+from app.services.workout_plan import get_item
 from app.schemas.workout_set import (
     WorkoutSetCreate,
     WorkoutSetPatch,
@@ -90,17 +94,56 @@ async def create_workout_set(
         current_user,
     )
 
-    program_exercise = await get_valid_program_exercise(
-        workout,
-        data.program_exercise_id,
-        session,
-    )
+    if data.workout_exercise_id is not None:
+        item = await get_item(session, workout, data.workout_exercise_id)
+        exercise_id = item.exercise_id
+        workout_exercise_id = item.id
+        program_exercise_id = None
+
+        # Строка программы остаётся у подхода, только если упражнение
+        # не заменяли
+        if item.program_exercise_id is not None:
+            origin = await session.get(ProgramExercise, item.program_exercise_id)
+            if origin is not None and origin.exercise_id == item.exercise_id:
+                program_exercise_id = origin.id
+    else:
+        program_exercise = await get_valid_program_exercise(
+            workout,
+            data.program_exercise_id,
+            session,
+        )
+        exercise_id = program_exercise.exercise_id
+        program_exercise_id = program_exercise.id
+        workout_exercise_id = None
+
+        # План тренировки уже свой: найдём строку, пришедшую из программы
+        if workout.custom_plan:
+            workout_exercise_id = await session.scalar(
+                select(WorkoutExercise.id).where(
+                    WorkoutExercise.scheduled_workout_id == workout.id,
+                    WorkoutExercise.program_exercise_id == program_exercise.id,
+                    WorkoutExercise.exercise_id == program_exercise.exercise_id,
+                )
+            )
+
+    exercise = await session.get(Exercise, exercise_id)
+    load_type = exercise.load_type if exercise else "external"
+    body_weight = current_user.body_weight if uses_body_weight(load_type) else None
+
+    if load_type == "assisted" and body_weight is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Set your body weight in the profile first",
+        )
 
     workout_set = WorkoutSet(
         scheduled_workout_id=scheduled_workout_id,
-        program_exercise_id=data.program_exercise_id,
-        exercise_id=program_exercise.exercise_id,
+        program_exercise_id=program_exercise_id,
+        workout_exercise_id=workout_exercise_id,
+        exercise_id=exercise_id,
         set_number=data.set_number,
+        body_weight=body_weight,
+        load=compute_load(load_type, data.weight, body_weight),
         weight=data.weight,
         reps=data.reps,
         completed=data.completed,
@@ -196,6 +239,15 @@ async def update_workout_set_common(
         workout_set.exercise_id = program_exercise.exercise_id
 
     apply_changes(workout_set, data, partial=partial)
+
+    # Вес или упражнение поменялись — пересчитать нагрузку
+    exercise = await session.get(Exercise, workout_set.exercise_id)
+    load_type = exercise.load_type if exercise else "external"
+
+    if uses_body_weight(load_type) and workout_set.body_weight is None:
+        workout_set.body_weight = current_user.body_weight
+
+    workout_set.load = compute_load(load_type, workout_set.weight, workout_set.body_weight)
 
     await session.commit()
     await session.refresh(workout_set)

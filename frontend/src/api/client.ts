@@ -55,6 +55,17 @@ const DETAIL_RU: Record<string, string> = {
   "Admin access required": "Нужны права администратора",
   "You cannot delete your own account here": "Свой аккаунт здесь удалить нельзя",
   "Row not found": "Запись не найдена",
+  "Set your body weight first": "Сначала укажите вес тела",
+  "Portion weight is needed to save the food": "Чтобы сохранить продукт, укажите вес порции",
+  "Entry not found": "Запись не найдена",
+  "Food not found": "Продукт не найден",
+  "Offer not found": "Этот тариф больше недоступен — выберите другой",
+  "Lead not found": "Заявка не найдена",
+  "Verification link is invalid or expired":
+    "Ссылка недействительна или устарела — отправьте письмо ещё раз из приложения",
+  "Email already verified": "Почта уже подтверждена",
+  "Please wait a minute before requesting another email": "Письмо только что отправлено — подождите минуту",
+  "Too many requests, try again later": "Слишком много заявок подряд — попробуйте через 10 минут",
   "Exercise has logged sets and cannot be deleted":
     "По этому упражнению есть записанные подходы, удалить его нельзя",
   "Exercise is used in programs and cannot be deleted":

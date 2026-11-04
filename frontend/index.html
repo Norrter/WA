@@ -1,16 +1,37 @@
 <!doctype html>
-<html lang="ru">
+<html lang="ru" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0f0b08" />
-    <title>Greek's Gym — журнал тренировок</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#1b1c1e" />
+    <title>Greek's Gym</title>
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Forum&family=Manrope:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Forum&family=Manrope:wght@400;500;600;700&display=swap"
     />
+
+    <!-- Тема ставится до загрузки приложения, чтобы страница не мигала.
+         Ключ и логика те же, что в src/lib/theme.ts -->
+    <script>
+      (function () {
+        var choice = "system";
+        try {
+          var saved = localStorage.getItem("gg-theme");
+          if (saved === "dark" || saved === "light" || saved === "system") choice = saved;
+        } catch (e) {}
+        var theme =
+          choice === "system"
+            ? window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"
+            : choice;
+        document.documentElement.dataset.theme = theme;
+        document
+          .querySelector('meta[name="theme-color"]')
+          .setAttribute("content", theme === "light" ? "#f3efea" : "#1b1c1e");
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

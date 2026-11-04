@@ -6,8 +6,12 @@ const NUMERALS: [number, string][] = [
   [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"],
 ];
 
+// В оформлении «Оранжевый + статуя» номера обычные: 1, 2, 3.
+// Чтобы вернуть римские, поставьте ROMAN = true.
+const ROMAN = false;
+
 export function roman(value: number): string {
-  if (value <= 0 || !Number.isFinite(value)) return String(value);
+  if (!ROMAN || value <= 0 || !Number.isFinite(value)) return String(value);
 
   let rest = Math.floor(value);
   let result = "";

@@ -49,6 +49,8 @@ TEST_DATABASE_URL = resolve_test_database_url()
 os.environ["DATABASE_URL"] = TEST_DATABASE_URL
 os.environ["SECRET_KEY"] = "test-secret-key-not-for-production-0123456789"
 os.environ["SQL_ECHO"] = "false"
+# Тесты никогда не шлют настоящие письма, даже если в .env настроен SMTP
+os.environ["SMTP_HOST"] = ""
 
 import httpx  # noqa: E402
 import pytest_asyncio  # noqa: E402

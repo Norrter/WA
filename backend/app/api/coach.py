@@ -44,7 +44,11 @@ from app.schemas.coach import (
     PeriodOverview,
     ScheduleRequest,
 )
+from app.api.body_weight import body_weight_list
+from app.api.nutrition import day_payload, profile_payload, summary_payload
+from app.schemas.nutrition import ClientNutrition
 from app.api.scheduled_workouts import workout_detail
+from app.schemas.body_weight import BodyWeightEntryResponse
 from app.schemas.program import ProgramResponse
 from app.schemas.scheduled_workout import ScheduledWorkoutDetailResponse
 from app.schemas.progress import ExerciseHistoryItem
@@ -370,7 +374,7 @@ async def get_client_workouts(
         select(
             WorkoutSet.scheduled_workout_id.label("workout_id"),
             func.count().label("sets"),
-            func.sum(WorkoutSet.weight * WorkoutSet.reps).label("volume"),
+            func.sum(WorkoutSet.load * WorkoutSet.reps).label("volume"),
         )
         .where(WorkoutSet.completed.is_(True))
         .group_by(WorkoutSet.scheduled_workout_id)
@@ -637,6 +641,41 @@ async def schedule_client_program(
     await session.commit()
 
     return {"program_id": program.id, "workouts_created": len(workouts)}
+
+
+@router.get(
+    "/clients/{client_id}/body-weight",
+    response_model=list[BodyWeightEntryResponse],
+)
+async def get_client_body_weight(
+    client_id: int,
+    date_from: date | None = Query(None),
+    date_to: date | None = Query(None),
+    session: AsyncSession = Depends(get_session),
+    coach: User = Depends(get_current_coach),
+):
+    """Журнал веса тела клиента, от старых записей к новым."""
+    await get_active_link(session, coach, client_id)
+    return await body_weight_list(session, client_id, date_from, date_to)
+
+
+@router.get("/clients/{client_id}/nutrition", response_model=ClientNutrition)
+async def get_client_nutrition(
+    client_id: int,
+    day: date | None = Query(None, alias="date"),
+    session: AsyncSession = Depends(get_session),
+    coach: User = Depends(get_current_coach),
+):
+    """Питание клиента: норма, дневник за день и итоги 7 дней до него."""
+    await get_active_link(session, coach, client_id)
+    client = await session.get(User, client_id)
+    day = day or date.today()
+
+    return {
+        "profile": await profile_payload(session, client),
+        "day": await day_payload(session, client_id, day),
+        "week": await summary_payload(session, client_id, day - timedelta(days=6), day),
+    }
 
 
 # ----- Заметки тренера -----

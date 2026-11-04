@@ -20,6 +20,7 @@ from app.models.program_exercise import ProgramExercise
 from app.models.scheduled_workout import ScheduledWorkout, WorkoutStatus
 from app.models.user import User
 from app.models.workout_set import WorkoutSet
+from app.services.workout_plan import workout_items
 from app.schemas.scheduled_workout import (
     GenerateScheduleRequest,
     ScheduledWorkoutCreate,
@@ -223,31 +224,61 @@ async def workout_detail(session: AsyncSession, workout: ScheduledWorkout) -> di
         )
     ).all()
 
-    planned_ids = {item.id for item in day.exercises} if day else set()
     by_plan: dict[int, list[WorkoutSet]] = {}
     orphans: dict[int, list[WorkoutSet]] = {}
 
-    for workout_set in sets:
-        if workout_set.program_exercise_id in planned_ids:
-            by_plan.setdefault(workout_set.program_exercise_id, []).append(workout_set)
-        else:
-            orphans.setdefault(workout_set.exercise_id, []).append(workout_set)
+    if workout.custom_plan:
+        # План меняли во время тренировки: свой список упражнений
+        items = await workout_items(session, workout.id)
+        by_item: dict[int, list[WorkoutSet]] = {}
 
-    exercises = [
-        {
-            "program_exercise_id": item.id,
-            "exercise": item.exercise,
-            "order_index": item.order_index,
-            "sets": item.sets,
-            "target_reps": item.target_reps,
-            "target_reps_max": item.target_reps_max,
-            "target_weight": item.target_weight,
-            "rest_seconds": item.rest_seconds,
-            "notes": item.notes,
-            "performed_sets": by_plan.get(item.id, []),
-        }
-        for item in (day.exercises if day else [])
-    ]
+        for workout_set in sets:
+            if workout_set.workout_exercise_id is not None:
+                by_item.setdefault(workout_set.workout_exercise_id, []).append(workout_set)
+            else:
+                orphans.setdefault(workout_set.exercise_id, []).append(workout_set)
+
+        exercises = [
+            {
+                "workout_exercise_id": item.id,
+                "program_exercise_id": item.program_exercise_id,
+                "exercise": item.exercise,
+                "order_index": item.order_index,
+                "sets": item.sets,
+                "target_reps": item.target_reps,
+                "target_reps_max": item.target_reps_max,
+                "target_weight": item.target_weight,
+                "rest_seconds": item.rest_seconds,
+                "notes": item.notes,
+                "performed_sets": by_item.get(item.id, []),
+            }
+            for item in items
+        ]
+    else:
+        planned_ids = {item.id for item in day.exercises} if day else set()
+
+        for workout_set in sets:
+            if workout_set.program_exercise_id in planned_ids:
+                by_plan.setdefault(workout_set.program_exercise_id, []).append(workout_set)
+            else:
+                orphans.setdefault(workout_set.exercise_id, []).append(workout_set)
+
+        exercises = [
+            {
+                "workout_exercise_id": None,
+                "program_exercise_id": item.id,
+                "exercise": item.exercise,
+                "order_index": item.order_index,
+                "sets": item.sets,
+                "target_reps": item.target_reps,
+                "target_reps_max": item.target_reps_max,
+                "target_weight": item.target_weight,
+                "rest_seconds": item.rest_seconds,
+                "notes": item.notes,
+                "performed_sets": by_plan.get(item.id, []),
+            }
+            for item in (day.exercises if day else [])
+        ]
 
     if orphans:
         known = {
@@ -261,6 +292,7 @@ async def workout_detail(session: AsyncSession, workout: ScheduledWorkout) -> di
         for offset, (exercise_id, performed) in enumerate(orphans.items()):
             exercises.append(
                 {
+                    "workout_exercise_id": None,
                     "program_exercise_id": None,
                     "exercise": known[exercise_id],
                     "order_index": start + offset,
@@ -299,6 +331,7 @@ async def workout_detail(session: AsyncSession, workout: ScheduledWorkout) -> di
         "feedback_comment": workout.feedback_comment,
         "feedback_at": workout.feedback_at,
         "coach_name": coach_name,
+        "custom_plan": workout.custom_plan,
         "exercises": exercises,
         "coach_comment": workout.coach_comment,
         "coach_comment_at": workout.coach_comment_at,

@@ -2,6 +2,7 @@ from datetime import date, datetime
 from enum import Enum
 
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     Date,
     DateTime,
@@ -9,6 +10,7 @@ from sqlalchemy import (
     SmallInteger,
     String,
     Text,
+    false,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -84,6 +86,15 @@ class ScheduledWorkout(Base):
     coach_comment_by: Mapped[int | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
+    )
+
+    # Во время тренировки план меняли: упражнения берутся из
+    # workout_exercises, а не из дня программы
+    custom_plan: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=false(),
     )
 
     scheduled_date: Mapped[date] = mapped_column(

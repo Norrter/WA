@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 
 import { useAuth } from "../components/Auth";
+import { ThemeToggle } from "../components/ThemeSwitch";
 import { useScene } from "../components/Scene";
 import { useToast } from "../components/Toast";
 import { Button, Field } from "../components/ui";
@@ -35,7 +36,13 @@ export function LoginPage() {
   return (
     <main className="auth">
       <header className="auth-head">
-        <p className="eyebrow">Журнал тренировок</p>
+        <div className="auth-top">
+          <a className="auth-back" href="#/">
+            ← На главную
+          </a>
+          <ThemeToggle />
+        </div>
+        <p className="eyebrow">Вход для клиентов</p>
         <h1 className="auth-title">
           Greek's
           <br />

@@ -1,7 +1,8 @@
 import { useMemo, useState, type FormEvent } from "react";
 
 import { exercises as exercisesApi } from "../api";
-import type { Exercise, ExerciseInput } from "../api/types";
+import type { Exercise, ExerciseInput, LoadType } from "../api/types";
+import { LOAD_TYPES } from "../lib/load";
 import { useScene } from "../components/Scene";
 import { useUser } from "../components/Auth";
 import { filterExercises, MuscleFilter } from "../components/ExercisePicker";
@@ -123,6 +124,7 @@ export function ExerciseDialog({
   const [muscleGroup, setMuscleGroup] = useState(exercise?.muscle_group ?? "");
   const [equipment, setEquipment] = useState(exercise?.equipment ?? "");
   const [description, setDescription] = useState(exercise?.description ?? "");
+  const [loadType, setLoadType] = useState<LoadType>(exercise?.load_type ?? "external");
   const [busy, setBusy] = useState(false);
 
   const submit = async (event: FormEvent) => {
@@ -134,6 +136,7 @@ export function ExerciseDialog({
       muscle_group: orNull(muscleGroup),
       equipment: orNull(equipment),
       description: orNull(description),
+      load_type: loadType,
     };
 
     try {
@@ -168,6 +171,18 @@ export function ExerciseDialog({
             </datalist>
           </Field>
         </div>
+        <Field label="Как считать нагрузку">
+          <select value={loadType} onChange={(e) => setLoadType(e.target.value as LoadType)}>
+            {LOAD_TYPES.map((item) => (
+              <option key={item.value} value={item.value}>
+                {item.label}
+              </option>
+            ))}
+          </select>
+          <span className="field-hint">
+            {LOAD_TYPES.find((item) => item.value === loadType)?.hint}
+          </span>
+        </Field>
         <Field label="Подсказка по технике">
           <textarea rows={3} maxLength={5000} value={description} onChange={(e) => setDescription(e.target.value)} />
         </Field>

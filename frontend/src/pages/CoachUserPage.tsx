@@ -8,6 +8,8 @@ import { useState, type FormEvent } from "react";
 import { coach, programs as programsApi } from "../api";
 import { ApiError } from "../api/client";
 import type { CoachNote, Program, ProgramDetail } from "../api/types";
+import { ClientBodyWeight } from "../components/BodyWeight";
+import { ClientNutrition } from "../components/ClientNutrition";
 import { BarChart } from "../components/Charts";
 import {
   FlagBadge,
@@ -259,6 +261,9 @@ export function CoachUserPage({ id }: { id: number }) {
             </dd>
           </div>
         </dl>
+
+        <ClientBodyWeight clientId={id} since={from} />
+        <ClientNutrition clientId={id} />
 
         <Notes clientId={id} />
 

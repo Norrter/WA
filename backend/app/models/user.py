@@ -2,7 +2,7 @@ from datetime import datetime
 
 from enum import Enum
 
-from sqlalchemy import CheckConstraint, DateTime, String, func
+from sqlalchemy import CheckConstraint, DateTime, Float, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.config import settings
@@ -54,6 +54,15 @@ class User(Base):
         server_default=UserRole.user.value,
     )
 
+    # Вес тела, кг: нужен для подтягиваний, брусьев и гравитрона
+    body_weight: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+    # Когда человек подтвердил почту по ссылке из письма; None — ещё нет
+    email_verified_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -66,6 +75,10 @@ class User(Base):
         onupdate=func.now(),
         nullable=False,
     )
+
+    @property
+    def email_verified(self) -> bool:
+        return self.email_verified_at is not None
 
     @property
     def is_admin(self) -> bool:

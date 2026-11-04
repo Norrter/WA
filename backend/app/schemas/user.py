@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, EmailStr, StringConstraints
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, StringConstraints
 
 from app.schemas.common import PatchModel
 
@@ -28,6 +28,8 @@ class UserPatch(PatchModel):
 
     email: EmailStr | None = None
     username: Username | None = None
+    # вес тела, кг; null — не указан
+    body_weight: Annotated[float, Field(ge=20, le=400)] | None = None
 
 
 class PasswordChange(BaseModel):
@@ -42,7 +44,10 @@ class UserResponse(BaseModel):
     email: EmailStr
     username: str
     role: str
+    body_weight: float | None = None
     # администратор: видит админ-панель (ADMIN_EMAILS)
     is_admin: bool = False
+    # почта подтверждена по ссылке из письма
+    email_verified: bool = False
     created_at: datetime
     updated_at: datetime

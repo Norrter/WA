@@ -12,6 +12,10 @@ export interface User {
   role: UserRole;
   // администратор: видит админ-панель (ADMIN_EMAILS)
   is_admin: boolean;
+  // почта подтверждена по ссылке из письма
+  email_verified: boolean;
+  // вес тела, кг — для подтягиваний, брусьев, гравитрона
+  body_weight: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -22,12 +26,17 @@ export interface Tokens {
   token_type: string;
 }
 
+// Как считать нагрузку: вес снаряда / свой вес + доп. вес / свой вес
+// с облегчением (гравитрон: вес тела − противовес)
+export type LoadType = "external" | "bodyweight" | "assisted";
+
 export interface Exercise {
   id: number;
   name: string;
   description: string | null;
   muscle_group: string | null;
   equipment: string | null;
+  load_type: LoadType;
   // null — общее упражнение из справочника
   created_by_user_id: number | null;
 }
@@ -37,11 +46,13 @@ export interface ExerciseInput {
   description: string | null;
   muscle_group: string | null;
   equipment: string | null;
+  load_type: LoadType;
 }
 
 export interface ExerciseShort {
   id: number;
   name: string;
+  load_type?: LoadType;
 }
 
 export interface ProgramExercise {
@@ -122,9 +133,16 @@ export interface WorkoutSet {
   scheduled_workout_id: number;
   // null, если упражнение потом убрали из плана
   program_exercise_id: number | null;
+  // строка своего плана тренировки
+  workout_exercise_id?: number | null;
   exercise_id: number;
   set_number: number;
+  // введённый вес: снаряд, доп. вес или противовес
   weight: number;
+  // вес тела на момент подхода
+  body_weight?: number | null;
+  // нагрузка с учётом веса тела
+  load?: number;
   reps: number;
   completed: boolean;
 }
@@ -132,6 +150,8 @@ export interface WorkoutSet {
 export interface WorkoutExerciseDetail {
   // null — упражнения уже нет в плане, остались только сделанные подходы
   program_exercise_id: number | null;
+  // строка своего плана тренировки: план меняли во время тренировки
+  workout_exercise_id: number | null;
   exercise: ExerciseShort;
   order_index: number;
   sets: number;
@@ -154,6 +174,8 @@ export type WorkoutDetail = WorkoutFeedback & {
   status: WorkoutStatus;
   // программу ведёт тренер
   coach_name: string | null;
+  // план меняли во время тренировки
+  custom_plan: boolean;
   exercises: WorkoutExerciseDetail[];
 } & CoachComment
 
@@ -162,7 +184,10 @@ export interface HistoryItem {
   scheduled_workout_id: number;
   date: string;
   set_number: number;
+  // нагрузка с учётом веса тела
   weight: number;
+  // что ввёл человек: вес снаряда, доп. вес или противовес
+  entered_weight?: number | null;
   reps: number;
   completed: boolean;
 }
@@ -382,4 +407,121 @@ export interface AdminStats {
   new_users_week: number;
   workouts_week: number;
   active_users_week: number;
+}
+
+// Запись веса тела (одна в день)
+export interface BodyWeightEntry {
+  id: number;
+  date: string;
+  weight: number;
+}
+
+// ----- Питание -----
+
+export type Sex = "male" | "female";
+export type Activity = "minimal" | "light" | "moderate" | "high" | "extreme";
+export type Goal = "lose" | "maintain" | "gain";
+export type Meal = "breakfast" | "lunch" | "dinner" | "snack";
+
+export interface Macros {
+  kcal: number;
+  protein: number;
+  fat: number;
+  carbs: number;
+}
+
+export interface Anthropometry {
+  sex: Sex;
+  age: number;
+  height_cm: number;
+  activity: Activity;
+  goal: Goal;
+}
+
+export interface NutritionCalculation extends Macros {
+  weight: number;
+  bmr: number;
+  tdee: number;
+}
+
+export interface NutritionProfile extends Anthropometry {
+  targets: Macros;
+  calculated: NutritionCalculation | null;
+}
+
+export interface Food extends Macros {
+  id: number;
+  name: string;
+}
+
+export interface FoodEntry extends Macros {
+  id: number;
+  date: string;
+  meal: Meal;
+  name: string;
+  grams: number | null;
+  food_id: number | null;
+}
+
+export interface FoodEntryInput extends Macros {
+  date?: string;
+  meal: Meal;
+  name: string;
+  grams?: number | null;
+  food_id?: number | null;
+  save_food?: boolean;
+}
+
+export interface NutritionDay {
+  date: string;
+  entries: FoodEntry[];
+  totals: Macros;
+  targets: Macros | null;
+}
+
+export interface NutritionDaySummary extends Macros {
+  date: string;
+  entries: number;
+}
+
+export interface ClientNutrition {
+  profile: NutritionProfile | null;
+  day: NutritionDay;
+  week: NutritionDaySummary[];
+}
+
+// ----- Главная страница: тарифы и заявки -----
+
+export interface Offer {
+  id: number;
+  title: string;
+  kind: "offline" | "online" | "program";
+  subtitle: string | null;
+  price: number;
+  price_unit: string | null;
+  features: string[];
+  is_featured: boolean;
+}
+
+export interface LeadInput {
+  offer_id?: number | null;
+  name: string;
+  contact: string;
+  goal?: string | null;
+  website?: string;
+}
+
+export type LeadStatus = "new" | "in_progress" | "done" | "rejected";
+
+export interface Lead {
+  id: number;
+  offer_id: number | null;
+  offer_title: string | null;
+  name: string;
+  contact: string;
+  goal: string | null;
+  status: LeadStatus;
+  note: string | null;
+  created_at: string;
+  updated_at: string;
 }

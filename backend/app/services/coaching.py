@@ -135,7 +135,7 @@ async def client_metrics(
             ScheduledWorkout.user_id,
             WorkoutSet.exercise_id,
             ScheduledWorkout.scheduled_date,
-            WorkoutSet.weight,
+            WorkoutSet.load,
             WorkoutSet.reps,
         )
         .join(ScheduledWorkout, ScheduledWorkout.id == WorkoutSet.scheduled_workout_id)
@@ -263,7 +263,7 @@ async def exercise_progress(
             Exercise.name,
             Exercise.muscle_group,
             ScheduledWorkout.scheduled_date,
-            WorkoutSet.weight,
+            WorkoutSet.load,
             WorkoutSet.reps,
         )
         .join(ScheduledWorkout, ScheduledWorkout.id == WorkoutSet.scheduled_workout_id)

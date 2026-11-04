@@ -6,6 +6,7 @@ import {
   type ButtonHTMLAttributes,
   type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 
 import type { WorkoutStatus } from "../api/types";
 import { today as todayISO } from "../lib/dates";
@@ -105,7 +106,9 @@ export function Modal({
     };
   }, [onClose]);
 
-  return (
+  // Окно выносится в <body>: карточки со «стеклом» (backdrop-filter)
+  // иначе стали бы для него рамкой позиционирования
+  return createPortal(
     <div className="modal-backdrop" onMouseDown={onClose}>
       <div
         className={`modal ${wide ? "modal-wide" : ""}`}
@@ -120,7 +123,8 @@ export function Modal({
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

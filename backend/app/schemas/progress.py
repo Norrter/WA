@@ -10,7 +10,10 @@ class ExerciseHistoryItem(BaseModel):
     scheduled_workout_id: int
     date: date
     set_number: int
+    # нагрузка с учётом веса тела (для подтягиваний — вес тела + доп. вес)
     weight: float
+    # что ввёл человек: вес снаряда, доп. вес или противовес
+    entered_weight: float | None = None
     reps: int
     completed: bool
 

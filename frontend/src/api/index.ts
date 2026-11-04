@@ -2,6 +2,21 @@
 
 import { query, request } from "./client";
 import type {
+  Anthropometry,
+  BodyWeightEntry,
+  ClientNutrition,
+  Lead,
+  LeadInput,
+  LeadStatus,
+  Offer,
+  Food,
+  FoodEntry,
+  FoodEntryInput,
+  Macros,
+  NutritionCalculation,
+  NutritionDay,
+  NutritionDaySummary,
+  NutritionProfile,
   CoachComment,
   SharedNote,
   AdminRow,
@@ -38,16 +53,57 @@ export const auth = {
   login: (email: string, password: string) =>
     request<Tokens>("POST", "/auth/login", { email, password }),
   me: () => request<User>("GET", "/auth/me"),
+  verifyEmail: (token: string) =>
+    request<{ email: string; email_verified: boolean }>("POST", "/auth/verify-email", { token }),
+  resendVerification: () => request<void>("POST", "/auth/verify-email/resend"),
 };
 
 export const users = {
   register: (data: { email: string; username: string; password: string }) =>
     request<User>("POST", "/users", data),
-  update: (data: Partial<Pick<User, "email" | "username">>) =>
+  update: (data: Partial<Pick<User, "email" | "username" | "body_weight">>) =>
     request<User>("PATCH", "/users/me", data),
   changePassword: (current_password: string, new_password: string) =>
     request<void>("POST", "/users/me/password", { current_password, new_password }),
   deleteMe: () => request<void>("DELETE", "/users/me"),
+};
+
+// Журнал веса тела
+export const bodyWeight = {
+  list: (date_from?: string, date_to?: string) =>
+    request<BodyWeightEntry[]>("GET", `/body-weight${query({ date_from, date_to })}`),
+  add: (weight: number, date?: string) =>
+    request<BodyWeightEntry>("POST", "/body-weight", { weight, date }),
+  remove: (id: number) => request<void>("DELETE", `/body-weight/${id}`),
+};
+
+export const publicApi = {
+  offers: () => request<Offer[]>("GET", "/public/offers"),
+  sendLead: (data: LeadInput) => request<{ id: number }>("POST", "/public/leads", data),
+};
+
+export const leads = {
+  list: (status?: LeadStatus) => request<Lead[]>("GET", `/leads${query({ status })}`),
+  update: (id: number, changes: { status?: LeadStatus; note?: string }) =>
+    request<Lead>("PATCH", `/leads/${id}`, changes),
+  remove: (id: number) => request<void>("DELETE", `/leads/${id}`),
+};
+
+export const nutrition = {
+  calculate: (data: Anthropometry & { weight?: number | null }) =>
+    request<NutritionCalculation>("POST", "/nutrition/calculate", data),
+  profile: () => request<NutritionProfile | null>("GET", "/nutrition/profile"),
+  saveProfile: (data: Anthropometry & { targets?: Macros | null }) =>
+    request<NutritionProfile>("PUT", "/nutrition/profile", data),
+  day: (date: string) => request<NutritionDay>("GET", `/nutrition/day${query({ date })}`),
+  summary: (date_from: string, date_to: string) =>
+    request<NutritionDaySummary[]>("GET", `/nutrition/summary${query({ date_from, date_to })}`),
+  addEntry: (data: FoodEntryInput) => request<FoodEntry>("POST", "/nutrition/entries", data),
+  updateEntry: (id: number, data: Partial<FoodEntryInput>) =>
+    request<FoodEntry>("PATCH", `/nutrition/entries/${id}`, data),
+  removeEntry: (id: number) => request<void>("DELETE", `/nutrition/entries/${id}`),
+  foods: (q?: string) => request<Food[]>("GET", `/nutrition/foods${query({ q })}`),
+  removeFood: (id: number) => request<void>("DELETE", `/nutrition/foods/${id}`),
 };
 
 export const exercises = {
@@ -140,8 +196,34 @@ export const workouts = {
 
   addSet: (
     workoutId: number,
-    data: { program_exercise_id: number; set_number: number; weight: number; reps: number },
+    data: {
+      program_exercise_id?: number;
+      workout_exercise_id?: number;
+      set_number: number;
+      weight: number;
+      reps: number;
+    },
   ) => request<WorkoutSet>("POST", `/scheduled-workouts/${workoutId}/sets`, data),
+
+  // Правки плана во время тренировки: программа не меняется.
+  // Каждый запрос возвращает тренировку целиком.
+  customize: (id: number) =>
+    request<WorkoutDetail>("POST", `/scheduled-workouts/${id}/customize`),
+  addExercise: (
+    id: number,
+    data: { exercise_id: number; sets?: number; target_reps?: number | null; target_weight?: number | null },
+  ) => request<WorkoutDetail>("POST", `/scheduled-workouts/${id}/exercises`, data),
+  changeExercise: (
+    id: number,
+    itemId: number,
+    data: { exercise_id?: number; sets?: number },
+  ) => request<WorkoutDetail>("PATCH", `/scheduled-workouts/${id}/exercises/${itemId}`, data),
+  moveExercise: (id: number, itemId: number, direction: "up" | "down") =>
+    request<WorkoutDetail>("POST", `/scheduled-workouts/${id}/exercises/${itemId}/move`, {
+      direction,
+    }),
+  removeExercise: (id: number, itemId: number) =>
+    request<WorkoutDetail>("DELETE", `/scheduled-workouts/${id}/exercises/${itemId}`),
   patchSet: (workoutId: number, setId: number, data: Partial<WorkoutSet>) =>
     request<WorkoutSet>("PATCH", `/scheduled-workouts/${workoutId}/sets/${setId}`, data),
   removeSet: (workoutId: number, setId: number) =>
@@ -207,6 +289,10 @@ export const coach = {
     ),
 
   notes: (id: number) => request<CoachNote[]>("GET", `/coach/clients/${id}/notes`),
+  bodyWeight: (id: number, date_from?: string) =>
+    request<BodyWeightEntry[]>("GET", `/coach/clients/${id}/body-weight${query({ date_from })}`),
+  nutrition: (id: number, date?: string) =>
+    request<ClientNutrition>("GET", `/coach/clients/${id}/nutrition${query({ date })}`),
   addNote: (id: number, text: string, shared: boolean) =>
     request<CoachNote>("POST", `/coach/clients/${id}/notes`, { text, shared }),
   updateNote: (noteId: number, changes: { text?: string; shared?: boolean }) =>

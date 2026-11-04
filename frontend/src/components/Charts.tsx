@@ -16,7 +16,7 @@ function niceMax(value: number): number {
   return step * power;
 }
 
-function Gridlines({ max }: { max: number }) {
+function Gridlines({ max, min = 0 }: { max: number; min?: number }) {
   const plotHeight = HEIGHT - PAD_BOTTOM - PAD_TOP;
 
   return (
@@ -27,7 +27,7 @@ function Gridlines({ max }: { max: number }) {
           <g key={part}>
             <line x1={PAD_LEFT} x2={WIDTH} y1={y} y2={y} />
             <text x={PAD_LEFT - 6} y={y + 4} textAnchor="end">
-              {formatNumber(max * part)}
+              {formatNumber(Math.round((min + (max - min) * part) * 10) / 10)}
             </text>
           </g>
         );
@@ -87,28 +87,37 @@ export function BarChart({
 export function TrendChart({
   points,
   unit,
+  fromZero = true,
+  highlightBest = true,
 }: {
   points: { date: string; value: number }[];
   unit: string;
+  // false — шкала по диапазону значений (для веса тела: 78–82 кг)
+  fromZero?: boolean;
+  highlightBest?: boolean;
 }) {
   if (points.length === 0) return null;
 
   const values = points.map((point) => point.value);
-  const max = niceMax(Math.max(...values));
+  const top = Math.max(...values);
+  const bottom = Math.min(...values);
+  // Для веса тела шкала по диапазону с запасом, иначе — от нуля
+  const min = fromZero ? 0 : Math.floor(bottom - Math.max(1, (top - bottom) * 0.3));
+  const max = fromZero ? niceMax(top) : Math.ceil(top + Math.max(1, (top - bottom) * 0.3));
   const plotWidth = WIDTH - PAD_LEFT - 12;
   const plotHeight = HEIGHT - PAD_BOTTOM - PAD_TOP;
 
   const coords = points.map((point, index) => ({
     ...point,
     x: PAD_LEFT + (points.length === 1 ? plotWidth / 2 : (plotWidth * index) / (points.length - 1)),
-    y: PAD_TOP + plotHeight * (1 - point.value / max),
+    y: PAD_TOP + plotHeight * (1 - (point.value - min) / (max - min)),
   }));
 
-  const best = Math.max(...values);
+  const best = highlightBest ? Math.max(...values) : Number.NaN;
 
   return (
     <svg className="chart" viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role="img">
-      <Gridlines max={max} />
+      <Gridlines max={max} min={min} />
       <polyline
         className="chart-line"
         points={coords.map((point) => `${point.x},${point.y}`).join(" ")}

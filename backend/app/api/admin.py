@@ -30,13 +30,17 @@ from app.core.dependencies import get_current_admin
 from app.core.roles import role_for_email
 from app.core.security import hash_password
 from app.database.session import get_session
+from app.models.body_weight import BodyWeightEntry
 from app.models.coaching import CoachClient, CoachNote
 from app.models.exercise import Exercise
+from app.models.nutrition import Food, FoodEntry
+from app.models.sales import Lead, Offer
 from app.models.program import Program
 from app.models.program_day import ProgramDay
 from app.models.program_exercise import ProgramExercise
 from app.models.scheduled_workout import ScheduledWorkout, WorkoutStatus
 from app.models.user import User
+from app.models.workout_exercise import WorkoutExercise
 from app.models.workout_set import WorkoutSet
 
 
@@ -109,10 +113,54 @@ TABLES: dict[str, AdminTable] = {
             "difficulty": "Сложность 1–10",
         },
     ),
+    "workout_exercises": AdminTable(
+        WorkoutExercise,
+        "Упражнения в тренировках",
+        ["id", "scheduled_workout_id", "exercise_id", "order_index", "sets", "target_reps"],
+        search=["notes"],
+    ),
     "workout_sets": AdminTable(
         WorkoutSet,
         "Подходы",
-        ["id", "scheduled_workout_id", "exercise_id", "set_number", "weight", "reps", "completed"],
+        ["id", "scheduled_workout_id", "exercise_id", "set_number", "weight", "load", "reps", "completed"],
+    ),
+    "body_weight_entries": AdminTable(
+        BodyWeightEntry,
+        "Вес тела",
+        ["id", "user_id", "date", "weight"],
+    ),
+    "offers": AdminTable(
+        Offer,
+        "Тарифы на главной",
+        ["id", "order_index", "title", "price", "price_unit", "is_active"],
+        search=["title", "subtitle"],
+        hints={
+            "features": "Что входит — каждый пункт с новой строки",
+            "price": "В рублях; 0 — «по договорённости»",
+            "price_unit": "Например: за тренировку, в месяц, разово",
+            "kind": "offline — в зале, online — онлайн-ведение, program — программа",
+            "is_featured": "Выделить карточку на главной",
+            "is_active": "Показывать на главной",
+            "order_index": "Порядок: меньше — левее",
+        },
+    ),
+    "leads": AdminTable(
+        Lead,
+        "Заявки",
+        ["id", "created_at", "name", "contact", "offer_title", "status"],
+        search=["name", "contact", "goal", "offer_title"],
+    ),
+    "foods": AdminTable(
+        Food,
+        "Продукты",
+        ["id", "user_id", "name", "kcal", "protein", "fat", "carbs"],
+        search=["name"],
+    ),
+    "food_entries": AdminTable(
+        FoodEntry,
+        "Дневник питания",
+        ["id", "user_id", "date", "meal", "name", "kcal"],
+        search=["name"],
     ),
     "coach_clients": AdminTable(
         CoachClient,
@@ -132,6 +180,10 @@ TABLES: dict[str, AdminTable] = {
 CHOICES = {
     ("users", "role"): ["user", "coach"],
     ("scheduled_workouts", "status"): [item.value for item in WorkoutStatus],
+    ("offers", "kind"): ["offline", "online", "program"],
+    ("leads", "status"): ["new", "in_progress", "done", "rejected"],
+    ("food_entries", "meal"): ["breakfast", "lunch", "dinner", "snack"],
+    ("exercises", "load_type"): ["external", "bodyweight", "assisted"],
     ("coach_clients", "status"): ["invited", "active", "declined", "ended"],
 }
 

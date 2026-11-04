@@ -1,6 +1,6 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,6 +11,8 @@ from app.core.security import hash_password, verify_password
 from app.database.session import get_session
 from app.models.coaching import CoachClient, CoachingStatus
 from app.models.user import User
+from app.services.body_weight import record as record_body_weight
+from app.services.emails import send_verification
 from app.schemas.user import (
     PasswordChange,
     UserCreate,
@@ -94,6 +96,7 @@ async def ensure_email_and_username_free(
 )
 async def create_user(
     data: UserCreate,
+    background: BackgroundTasks,
     session: AsyncSession = Depends(get_session),
 ):
     await ensure_email_and_username_free(
@@ -118,12 +121,16 @@ async def create_user(
     await session.commit()
     await session.refresh(user)
 
+    # Письмо со ссылкой уходит после ответа — регистрация не ждёт почту
+    background.add_task(send_verification, user.id, user.username, user.email)
+
     return user
 
 
 @router.patch("/me", response_model=UserResponse)
 async def update_me(
     data: UserPatch,
+    background: BackgroundTasks,
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
@@ -135,7 +142,13 @@ async def update_me(
         exclude_user_id=current_user.id,
     )
 
+    old_email = current_user.email
     apply_changes(current_user, data, partial=True)
+    email_changed = current_user.email.lower() != old_email.lower()
+
+    # Новый адрес нужно подтвердить заново
+    if email_changed:
+        current_user.email_verified_at = None
 
     # Роль тренера привязана к email
     current_user.role = role_for_email(current_user.email)
@@ -143,8 +156,17 @@ async def update_me(
     if data.email is not None:
         await attach_waiting_coach(session, current_user)
 
+    # Вес тела из профиля — это запись журнала за сегодня
+    if data.body_weight is not None:
+        await record_body_weight(session, current_user, date.today(), data.body_weight)
+
     await session.commit()
     await session.refresh(current_user)
+
+    if email_changed:
+        background.add_task(
+            send_verification, current_user.id, current_user.username, current_user.email
+        )
 
     return current_user
 

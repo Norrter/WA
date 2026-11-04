@@ -1,0 +1,27 @@
+// Римские цифры для номеров упражнений и подходов: I, II, III, IV…
+
+const NUMERALS: [number, string][] = [
+  [1000, "M"], [900, "CM"], [500, "D"], [400, "CD"],
+  [100, "C"], [90, "XC"], [50, "L"], [40, "XL"],
+  [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"],
+];
+
+// В оформлении «Оранжевый + статуя» номера обычные: 1, 2, 3.
+// Чтобы вернуть римские, поставьте ROMAN = true.
+const ROMAN = false;
+
+export function roman(value: number): string {
+  if (!ROMAN || value <= 0 || !Number.isFinite(value)) return String(value);
+
+  let rest = Math.floor(value);
+  let result = "";
+
+  for (const [amount, letters] of NUMERALS) {
+    while (rest >= amount) {
+      result += letters;
+      rest -= amount;
+    }
+  }
+
+  return result;
+}

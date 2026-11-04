@@ -16,6 +16,10 @@ from app.api.programs import router as programs_router
 from app.api.progress import router as progress_router
 from app.api.scheduled_workouts import router as scheduled_workouts_router
 from app.api.users import router as users_router
+from app.api.body_weight import router as body_weight_router
+from app.api.nutrition import router as nutrition_router
+from app.api.sales import public_router, router as leads_router
+from app.api.workout_exercises import router as workout_exercises_router
 from app.api.workout_sets import router as workout_sets_router
 from app.config import settings
 from app.core.errors import integrity_error_handler
@@ -54,6 +58,11 @@ app.include_router(progress_router)
 app.include_router(exercises_router)
 app.include_router(scheduled_workouts_router)
 app.include_router(workout_sets_router)
+app.include_router(workout_exercises_router)
+app.include_router(body_weight_router)
+app.include_router(nutrition_router)
+app.include_router(public_router)
+app.include_router(leads_router)
 app.include_router(coach_router)
 app.include_router(coaching_router)
 app.include_router(admin_router)

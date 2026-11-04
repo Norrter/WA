@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 
-import { exercises as exercisesApi, workouts } from "../api";
-import type { WorkoutDetail, WorkoutExerciseDetail, WorkoutStatus } from "../api/types";
+import { exercises as exercisesApi, users, workouts } from "../api";
+import { useAuth, useUser } from "../components/Auth";
+import type { Exercise, WorkoutDetail, WorkoutExerciseDetail, WorkoutStatus } from "../api/types";
+import { ExercisePicker } from "../components/ExercisePicker";
 import { FeedbackDialog, FeedbackLine } from "../components/Feedback";
 import { CoachMessage } from "../components/MyCoach";
 import { useScene } from "../components/Scene";
@@ -23,7 +25,8 @@ import {
 } from "../components/ui";
 import { formatDayWithWeekday, relativeDay } from "../lib/dates";
 import { loadExercises } from "../lib/data";
-import { formatDuration, formatNumber, formatReps, formatWeight, plural } from "../lib/format";
+import { formatDuration, formatReps, formatWeight, plural } from "../lib/format";
+import { enteredText, loadFormula, usesBodyWeight, weightLabel } from "../lib/load";
 import { roman } from "../lib/roman";
 import { navigate } from "../lib/router";
 import { useAsync } from "../lib/useAsync";
@@ -34,6 +37,8 @@ function isDone(item: WorkoutExerciseDetail): boolean {
 
 // Упражнение, которого уже нет в плане, узнаём по самому упражнению
 function itemKey(item: WorkoutExerciseDetail): string {
+  if (item.workout_exercise_id !== null) return `item-${item.workout_exercise_id}`;
+
   return item.program_exercise_id !== null
     ? `plan-${item.program_exercise_id}`
     : `done-${item.exercise.id}`;
@@ -49,6 +54,11 @@ export function WorkoutPage({ id }: { id: number }) {
   // key меняется на каждый записанный подход, чтобы таймер начинался заново
   const [rest, setRest] = useState<{ seconds: number; key: number } | null>(null);
   const [moving, setMoving] = useState(false);
+  // Правка плана этой тренировки
+  const [editing, setEditing] = useState(false);
+  const [picker, setPicker] = useState<
+    { kind: "add" } | { kind: "replace"; item: WorkoutExerciseDetail } | null
+  >(null);
 
   const { data, error, loading, reload, setData } = useAsync(
     () => Promise.all([workouts.full(id), loadExercises()]),
@@ -75,6 +85,78 @@ export function WorkoutPage({ id }: { id: number }) {
   const replaceWorkout = (next: WorkoutDetail) => setData([next, data[1]]);
 
   const refresh = async () => replaceWorkout(await workouts.full(id));
+
+  // Первое изменение копирует план дня в тренировку; дальше правим её
+  // собственные строки. Возвращает строку, соответствующую item.
+  const ensureCustom = async (): Promise<WorkoutDetail> =>
+    workout.custom_plan ? workout : workouts.customize(id);
+
+  const findItem = (detail: WorkoutDetail, item: WorkoutExerciseDetail) =>
+    item.workout_exercise_id !== null
+      ? detail.exercises.find((other) => other.workout_exercise_id === item.workout_exercise_id)
+      : detail.exercises.find((other) =>
+          item.program_exercise_id !== null
+            ? other.program_exercise_id === item.program_exercise_id
+            : other.program_exercise_id === null && other.exercise.id === item.exercise.id,
+        );
+
+  const apply = (next: WorkoutDetail, keep?: WorkoutExerciseDetail) => {
+    // Активное упражнение остаётся тем же после копирования плана
+    const current = keep ?? active;
+    const same = current ? findItem(next, current) : undefined;
+    replaceWorkout(next);
+    setActiveId(same ? itemKey(same) : null);
+  };
+
+  const edit = async (
+    item: WorkoutExerciseDetail,
+    action: (itemId: number) => Promise<WorkoutDetail>,
+  ) => {
+    try {
+      const detail = await ensureCustom();
+      const target = findItem(detail, item);
+      if (!target?.workout_exercise_id) throw new Error("Упражнение не найдено");
+      apply(await action(target.workout_exercise_id));
+    } catch (caught) {
+      toast.error(caught);
+      void refresh();
+    }
+  };
+
+  const removeItem = async (item: WorkoutExerciseDetail) => {
+    const sets = item.performed_sets.length;
+    const agreed = await confirm(
+      sets > 0
+        ? `«${item.exercise.name}» уберётся из этой тренировки вместе с записанными подходами (${sets}). Программа не изменится.`
+        : `«${item.exercise.name}» уберётся из этой тренировки. Программа не изменится.`,
+      "Убрать",
+    );
+    if (agreed) await edit(item, (itemId) => workouts.removeExercise(id, itemId));
+  };
+
+  const pickExercise = async (exercise: Exercise) => {
+    const current = picker;
+    setPicker(null);
+    if (!current) return;
+
+    if (current.kind === "replace") {
+      await edit(current.item, (itemId) =>
+        workouts.changeExercise(id, itemId, { exercise_id: exercise.id }),
+      );
+      return;
+    }
+
+    try {
+      await ensureCustom();
+      const next = await workouts.addExercise(id, { exercise_id: exercise.id, sets: 3 });
+      const added = next.exercises[next.exercises.length - 1];
+      apply(next, added);
+      toast.success(`«${exercise.name}» добавлено в тренировку`);
+    } catch (caught) {
+      toast.error(caught);
+      void refresh();
+    }
+  };
 
   const setStatus = async (status: WorkoutStatus) => {
     try {
@@ -215,46 +297,163 @@ export function WorkoutPage({ id }: { id: number }) {
         </section>
       )}
 
-      {workout.exercises.length > 1 && (
-        <section className="block wx-others" aria-labelledby="others-title">
-          <h2 className="section-label" id="others-title">Все упражнения</h2>
-          <ol className="wx-list">
-            {workout.exercises.map((item, index) => {
-              const isActive = active !== undefined && itemKey(item) === itemKey(active);
-              const done = Math.min(item.performed_sets.length, item.sets);
+      <section className="block wx-others" aria-labelledby="others-title">
+        <div className="block-head wx-others-head">
+          <h2 className="section-label" id="others-title">
+            {editing ? "Упражнения этой тренировки" : "Все упражнения"}
+          </h2>
+          {workout.exercises.length > 0 && (
+            <button
+              type="button"
+              className="link-quiet"
+              onClick={async () => {
+                if (editing) {
+                  setEditing(false);
+                  return;
+                }
 
+                setEditing(true);
+
+                // План дня копируется в тренировку, чтобы его можно было менять
+                if (!workout.custom_plan) {
+                  try {
+                    apply(await workouts.customize(id));
+                  } catch (caught) {
+                    toast.error(caught);
+                  }
+                }
+              }}
+            >
+              {editing ? "Готово" : "Изменить"}
+            </button>
+          )}
+        </div>
+
+        {editing && (
+          <p className="muted small wx-edit-hint">
+            Изменения касаются только этой тренировки — программа останется прежней.
+          </p>
+        )}
+
+        <ol className="wx-list">
+          {workout.exercises.map((item, index) => {
+            const isActive = active !== undefined && itemKey(item) === itemKey(active);
+            const done = Math.min(item.performed_sets.length, item.sets);
+
+            if (editing) {
               return (
-                <li key={itemKey(item)}>
-                  <button
-                    type="button"
-                    className={`wx-row ${isActive ? "is-active" : ""} ${isDone(item) ? "is-done" : ""}`}
-                    aria-current={isActive ? "step" : undefined}
-                    onClick={() => {
-                      setActiveId(itemKey(item));
-                      window.scrollTo({ top: 0, behavior: "smooth" });
-                    }}
-                  >
+                <li key={itemKey(item)} className="wx-edit">
+                  <div className="wx-edit-top">
                     <span className="wx-index">{roman(index + 1)}</span>
                     <span className="wx-row-main">
                       <span className="wx-name">{item.exercise.name}</span>
-                      <span className="wx-row-note">
-                        {done} из {item.sets} {plural(item.sets, "подхода", "подходов", "подходов")}
-                      </span>
+                      {item.performed_sets.length > 0 && (
+                        <span className="wx-row-note">
+                          записано подходов: {item.performed_sets.length}
+                        </span>
+                      )}
                     </span>
-                    {isDone(item) ? (
-                      <span className="wx-row-check" aria-label="Готово">
-                        <Icon name="check" size={14} strokeWidth={3} />
+                    <IconButton
+                      icon="up"
+                      label="Выше"
+                      disabled={index === 0}
+                      onClick={() => void edit(item, (itemId) => workouts.moveExercise(id, itemId, "up"))}
+                    />
+                    <IconButton
+                      icon="down"
+                      label="Ниже"
+                      disabled={index === workout.exercises.length - 1}
+                      onClick={() => void edit(item, (itemId) => workouts.moveExercise(id, itemId, "down"))}
+                    />
+                  </div>
+                  <div className="wx-edit-bottom">
+                    <div className="sets-count" role="group" aria-label={`Подходы: ${item.sets}`}>
+                      <button
+                        type="button"
+                        aria-label="Меньше подходов"
+                        disabled={item.sets <= 1}
+                        onClick={() =>
+                          void edit(item, (itemId) =>
+                            workouts.changeExercise(id, itemId, { sets: item.sets - 1 }),
+                          )
+                        }
+                      >
+                        −
+                      </button>
+                      <span>
+                        {item.sets} {plural(item.sets, "подход", "подхода", "подходов")}
                       </span>
-                    ) : (
-                      <Icon name="right" size={18} strokeWidth={2} />
-                    )}
-                  </button>
+                      <button
+                        type="button"
+                        aria-label="Больше подходов"
+                        disabled={item.sets >= 20}
+                        onClick={() =>
+                          void edit(item, (itemId) =>
+                            workouts.changeExercise(id, itemId, { sets: item.sets + 1 }),
+                          )
+                        }
+                      >
+                        +
+                      </button>
+                    </div>
+                    <Button
+                      small
+                      variant="ghost"
+                      disabled={item.performed_sets.length > 0}
+                      title={
+                        item.performed_sets.length > 0
+                          ? "Подходы уже записаны — добавьте другое упражнение"
+                          : undefined
+                      }
+                      onClick={() => setPicker({ kind: "replace", item })}
+                    >
+                      Заменить
+                    </Button>
+                    <IconButton
+                      icon="trash"
+                      label="Убрать из тренировки"
+                      onClick={() => void removeItem(item)}
+                    />
+                  </div>
                 </li>
               );
-            })}
-          </ol>
-        </section>
-      )}
+            }
+
+            return (
+              <li key={itemKey(item)}>
+                <button
+                  type="button"
+                  className={`wx-row ${isActive ? "is-active" : ""} ${isDone(item) ? "is-done" : ""}`}
+                  aria-current={isActive ? "step" : undefined}
+                  onClick={() => {
+                    setActiveId(itemKey(item));
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                >
+                  <span className="wx-index">{roman(index + 1)}</span>
+                  <span className="wx-row-main">
+                    <span className="wx-name">{item.exercise.name}</span>
+                    <span className="wx-row-note">
+                      {done} из {item.sets} {plural(item.sets, "подхода", "подходов", "подходов")}
+                    </span>
+                  </span>
+                  {isDone(item) ? (
+                    <span className="wx-row-check" aria-label="Готово">
+                      <Icon name="check" size={14} strokeWidth={3} />
+                    </span>
+                  ) : (
+                    <Icon name="right" size={18} strokeWidth={2} />
+                  )}
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+
+        <Button className="btn-block wx-add" icon="plus" onClick={() => setPicker({ kind: "add" })}>
+          Добавить упражнение
+        </Button>
+      </section>
 
       {workout.status === "completed" && (
         <section className="workout-feedback" aria-label="Оценка тренировки">
@@ -293,6 +492,16 @@ export function WorkoutPage({ id }: { id: number }) {
         <Button onClick={() => setMoving(true)}>Перенести</Button>
         <Button variant="danger" onClick={remove}>Удалить</Button>
       </div>
+
+      {picker && (
+        <Modal
+          title={picker.kind === "add" ? "Добавить упражнение" : `Заменить «${picker.item.exercise.name}»`}
+          onClose={() => setPicker(null)}
+          wide
+        >
+          <ExercisePicker exercises={data[1]} onPick={(exercise) => void pickExercise(exercise)} />
+        </Modal>
+      )}
 
       {moving && (
         <MoveDialog
@@ -361,10 +570,16 @@ function SetLogger({
   onLogged: (item: WorkoutExerciseDetail) => void;
 }) {
   const toast = useToast();
+  const user = useUser();
+  const loadType = item.exercise.load_type;
+  const needsBody = usesBodyWeight(loadType);
+  const bodyWeight = user.body_weight;
   const lastSet = item.performed_sets[item.performed_sets.length - 1];
   const previous = usePreviousSets(item.exercise.id, workoutId, workoutDate);
 
-  const [weight, setWeight] = useState(lastSet?.weight ?? item.target_weight ?? 20);
+  const [weight, setWeight] = useState(
+    lastSet?.weight ?? item.target_weight ?? (loadType === "bodyweight" ? 0 : 20),
+  );
   const [reps, setReps] = useState(lastSet?.reps ?? item.target_reps ?? 10);
   const [busy, setBusy] = useState(false);
 
@@ -373,14 +588,17 @@ function SetLogger({
 
   useEffect(() => {
     if (prefilled || lastSet || previous.length === 0) return;
-    setWeight(previous[0].weight);
+    setWeight(previous[0].entered_weight ?? previous[0].weight);
     setReps(previous[0].reps);
     setPrefilled(true);
   }, [previous, lastSet, prefilled]);
 
   const nextNumber = Math.max(0, ...item.performed_sets.map((set) => set.set_number)) + 1;
   const planExerciseId = item.program_exercise_id;
-  const canLog = planExerciseId !== null;
+  const itemId = item.workout_exercise_id;
+  const canLog = itemId !== null || planExerciseId !== null;
+  // Гравитрон без веса тела не посчитать
+  const blocked = loadType === "assisted" && bodyWeight === null;
   const rowsCount = Math.max(
     item.sets,
     item.performed_sets.length + (canLog ? 1 : 0),
@@ -388,12 +606,14 @@ function SetLogger({
   );
 
   const logSet = async () => {
-    if (planExerciseId === null) return;
+    if (!canLog) return;
     setBusy(true);
 
     try {
       await workouts.addSet(workoutId, {
-        program_exercise_id: planExerciseId,
+        ...(itemId !== null
+          ? { workout_exercise_id: itemId }
+          : { program_exercise_id: planExerciseId ?? undefined }),
         set_number: nextNumber,
         weight,
         reps,
@@ -425,7 +645,8 @@ function SetLogger({
     }
   };
 
-  const value = (w: number, r: number) => `${formatNumber(w)} × ${r}`;
+  const value = (w: number, r: number) => `${enteredText(loadType, w)} × ${r}`;
+  const unit = needsBody ? "" : " кг";
 
   return (
     <div className="logger">
@@ -434,13 +655,17 @@ function SetLogger({
         <h2 className="wx-card-title" id="active-exercise-title">{item.exercise.name}</h2>
         {canLog ? (
           <p className="logger-plan">
-            План {item.sets} × {formatReps(item.target_reps, item.target_reps_max)}
+            План{" "}
+            {item.target_reps !== null
+              ? `${item.sets} × ${formatReps(item.target_reps, item.target_reps_max)}`
+              : `${item.sets} ${plural(item.sets, "подход", "подхода", "подходов")}`}
             {item.target_weight !== null && ` · ${formatWeight(item.target_weight)}`}
             {item.rest_seconds !== null && ` · отдых ${formatDuration(item.rest_seconds)}`}
           </p>
         ) : (
           <p className="logger-plan">
             Этого упражнения больше нет в программе. Сделанные подходы сохранены в истории.
+            Нажмите «Изменить» в списке упражнений, чтобы продолжить его в этой тренировке.
           </p>
         )}
         {item.notes && <p className="logger-notes">{item.notes}</p>}
@@ -464,7 +689,9 @@ function SetLogger({
             return (
               <tr key={row} className={isCurrent ? "is-current" : set ? (set.completed ? "is-done" : "is-failed") : ""}>
                 <th scope="row">{roman(row + 1)}</th>
-                <td className="sets-prev">{before ? `${value(before.weight, before.reps)} кг` : "—"}</td>
+                <td className="sets-prev">
+                  {before ? `${value(before.entered_weight ?? before.weight, before.reps)}${unit}` : "—"}
+                </td>
                 <td className="sets-now">
                   {set ? value(set.weight, set.reps) : isCurrent ? value(weight, reps) : "—"}
                 </td>
@@ -496,18 +723,79 @@ function SetLogger({
       {canLog && (
         <>
           <div className="logger-inputs">
-            <Stepper label="Вес, кг" value={weight} step={2.5} onChange={setWeight} />
+            <Stepper label={weightLabel(loadType)} value={weight} step={2.5} onChange={setWeight} />
             <Stepper label="Повторы" value={reps} step={1} min={1} onChange={setReps} />
           </div>
 
+          {needsBody &&
+            (bodyWeight !== null ? (
+              <p className="load-line">
+                Нагрузка: <strong>{loadFormula(loadType, weight, bodyWeight)}</strong>
+              </p>
+            ) : (
+              <BodyWeightPrompt required={loadType === "assisted"} />
+            ))}
+
           {isBarbell && <PlateBar weight={weight} />}
 
-          <Button variant="primary" className="btn-block btn-log" onClick={logSet} busy={busy}>
+          <Button
+            variant="primary"
+            className="btn-block btn-log"
+            onClick={logSet}
+            busy={busy}
+            disabled={blocked}
+          >
             Записать подход {roman(nextNumber)}
           </Button>
         </>
       )}
     </div>
+  );
+}
+
+// Вес тела не указан: спросить прямо в тренировке и сохранить в профиль
+function BodyWeightPrompt({ required }: { required: boolean }) {
+  const { setUser } = useAuth();
+  const toast = useToast();
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const save = async (event: FormEvent) => {
+    event.preventDefault();
+    const value = Number(text.replace(",", "."));
+    if (!value) return;
+    setBusy(true);
+
+    try {
+      setUser(await users.update({ body_weight: value }));
+      toast.success("Вес тела сохранён в профиле");
+    } catch (error) {
+      toast.error(error);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <form className="body-weight-prompt" onSubmit={save}>
+      <p>
+        {required
+          ? "Укажите вес тела: нагрузка в гравитроне = вес тела − противовес."
+          : "Укажите вес тела, чтобы нагрузка считалась как вес тела + доп. вес."}
+      </p>
+      <div className="body-weight-row">
+        <input
+          inputMode="decimal"
+          aria-label="Вес тела, кг"
+          placeholder="Вес тела, кг"
+          value={text}
+          onChange={(event) => setText(event.target.value)}
+        />
+        <Button type="submit" small busy={busy} disabled={!text.trim()}>
+          Сохранить
+        </Button>
+      </div>
+    </form>
   );
 }
 

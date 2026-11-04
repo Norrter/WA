@@ -13,6 +13,7 @@ from app.database.session import get_session
 from app.models.exercise import Exercise
 from app.models.program_exercise import ProgramExercise
 from app.models.user import User
+from app.services.loads import recalc_exercise
 from app.models.workout_set import WorkoutSet
 from app.schemas.exercise import (
     ExerciseCreate,
@@ -73,6 +74,7 @@ async def create_exercise(
         description=data.description,
         muscle_group=data.muscle_group,
         equipment=data.equipment,
+        load_type=data.load_type,
     )
 
     session.add(exercise)
@@ -160,7 +162,11 @@ async def update_exercise(
         current_user,
     )
 
+    previous_type = exercise.load_type
     apply_changes(exercise, data, partial=False)
+
+    if exercise.load_type != previous_type:
+        await recalc_exercise(session, exercise)
 
     await session.commit()
     await session.refresh(exercise)
@@ -184,7 +190,11 @@ async def patch_exercise(
         current_user,
     )
 
+    previous_type = exercise.load_type
     apply_changes(exercise, data, partial=True)
+
+    if exercise.load_type != previous_type:
+        await recalc_exercise(session, exercise)
 
     await session.commit()
     await session.refresh(exercise)

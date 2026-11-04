@@ -91,6 +91,8 @@ class WorkoutExerciseDetail(BaseModel):
     тогда здесь только сделанные подходы, без плана."""
 
     program_exercise_id: int | None
+    # строка своего плана тренировки (если план меняли во время тренировки)
+    workout_exercise_id: int | None = None
     exercise: ExerciseShortResponse
     order_index: int
     sets: int
@@ -114,6 +116,8 @@ class ScheduledWorkoutDetailResponse(WorkoutFeedback):
     coach_name: str | None = None
     scheduled_date: date
     status: WorkoutStatus
+    # план меняли во время тренировки — упражнения свои, не из программы
+    custom_plan: bool = False
     exercises: list[WorkoutExerciseDetail]
     # комментарий тренера к этой тренировке
     coach_comment: str | None = None

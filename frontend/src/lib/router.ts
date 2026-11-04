@@ -11,11 +11,15 @@ export type Route =
   | { name: "exercises" }
   | { name: "exercise"; id: number }
   | { name: "progress" }
+  | { name: "nutrition" }
+  | { name: "login" }
+  | { name: "leads" }
   | { name: "profile" }
   | { name: "coach" }
   | { name: "coachUser"; id: number }
   | { name: "coachWorkout"; id: number; workoutId: number }
   | { name: "admin"; table: string | null }
+  | { name: "verifyEmail"; token: string }
   | { name: "notFound" };
 
 export function parseRoute(hash: string): Route {
@@ -35,6 +39,10 @@ export function parseRoute(hash: string): Route {
         return { name: "exercises" };
       case "progress":
         return { name: "progress" };
+      case "nutrition":
+        return { name: "nutrition" };
+      case "login":
+        return { name: "login" };
       case "profile":
         return { name: "profile" };
       case "coach":
@@ -55,9 +63,19 @@ export function parseRoute(hash: string): Route {
     }
   }
 
+  // #/verify-email/<токен из письма>
+  if (parts.length === 2 && section === "verify-email") {
+    return { name: "verifyEmail", token: parts[1] };
+  }
+
   // #/admin/users
   if (parts.length === 2 && section === "admin" && /^[a-z_]+$/.test(parts[1])) {
     return { name: "admin", table: parts[1] };
+  }
+
+  // #/coach/leads
+  if (parts.length === 2 && section === "coach" && parts[1] === "leads") {
+    return { name: "leads" };
   }
 
   // #/coach/clients/5

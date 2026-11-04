@@ -12,6 +12,7 @@ import { useToast } from "../components/Toast";
 import { Button, Empty, ErrorNote, Loading, PageHeader, StatusPill } from "../components/ui";
 import { formatDayWithWeekday, today } from "../lib/dates";
 import { formatNumber, formatReps, formatWeight } from "../lib/format";
+import { enteredText, usesBodyWeight } from "../lib/load";
 import { roman } from "../lib/roman";
 import { useAsync } from "../lib/useAsync";
 
@@ -41,7 +42,7 @@ export function CoachWorkoutPage({ id, workoutId }: { id: number; workoutId: num
   const setWorkout = (next: WorkoutDetail) => state.setData([next, card]);
 
   const done = workout.exercises.flatMap((item) => item.performed_sets.filter((set) => set.completed));
-  const volume = done.reduce((sum, set) => sum + set.weight * set.reps, 0);
+  const volume = done.reduce((sum, set) => sum + (set.load ?? set.weight) * set.reps, 0);
   const planned = workout.exercises.reduce((sum, item) => sum + item.sets, 0);
   const hasFeedback =
     workout.wellbeing !== null || workout.difficulty !== null || !!workout.feedback_comment;
@@ -139,7 +140,12 @@ function ExerciseResult({ item, index }: { item: WorkoutExerciseDetail; index: n
           {item.performed_sets.map((set) => (
             <li key={set.id} className={set.completed ? "cw-set" : "cw-set is-missed"}>
               <span className="cw-set-number">{roman(set.set_number)}</span>
-              {formatWeight(set.weight)} × {set.reps}
+              {usesBodyWeight(item.exercise.load_type)
+                ? `${enteredText(item.exercise.load_type, set.weight)} × ${set.reps}`
+                : `${formatWeight(set.weight)} × ${set.reps}`}
+              {usesBodyWeight(item.exercise.load_type) && set.load !== undefined && (
+                <span className="cw-set-load">= {formatWeight(set.load)}</span>
+              )}
               {!set.completed && <span className="cw-set-flag">не выполнен</span>}
             </li>
           ))}

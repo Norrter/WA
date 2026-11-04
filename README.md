@@ -160,6 +160,12 @@ Email в приложении не подтверждается, поэтому 
   может их менять. Любую тренировку клиента (прошедшую или будущую) тренер
   открывает из карточки клиента и может оставить к ней комментарий —
   клиент видит его прямо в этой тренировке.
+- Во время тренировки можно поменять её план: добавить, заменить или
+  убрать упражнение, изменить число подходов и порядок (кнопка «Изменить»
+  в списке упражнений). Меняется только эта тренировка — программа
+  остаётся прежней. Изменённый план хранится в таблице
+  `workout_exercises`, подходы ссылаются на свою строку через
+  `workout_sets.workout_exercise_id`.
 - Заметки тренера по умолчанию видит только он сам. Заметку с отметкой
   «Видна клиенту» клиент видит на главной («От тренера») и в профиле.
 
@@ -228,6 +234,7 @@ Email в приложении не подтверждается, поэтому 
 | Статистика | `GET /stats/summary`, `GET /stats/weekly-volume`, `GET /stats/overview`, `GET /stats/records` |
 | Тренер | `GET/POST /coach/clients`, `DELETE /coach/invitations/{id}`, `GET /coach/clients/{id}` и `.../summary`, `.../weekly-volume`, `.../records`, `.../workouts`, `.../notes`, `POST .../end`, `PATCH/DELETE /coach/notes/{id}` — только для роли `coach` и только свои активные клиенты |
 | Мой тренер | `GET /coaching`, `GET /coaching/notes` (заметки «Видна клиенту»), `POST /coaching/end` |
+| План тренировки | `POST /scheduled-workouts/{id}/customize`, `POST /scheduled-workouts/{id}/exercises`, `PATCH/DELETE .../exercises/{item}`, `POST .../exercises/{item}/move`; подход к строке плана — `workout_exercise_id` в `POST .../sets` |
 | Тренировка клиента (тренер) | `GET /coach/clients/{id}/workouts/{wid}`, `PUT /coach/clients/{id}/workouts/{wid}/comment` (пустой текст удаляет); заметки: `shared` в `POST .../notes` и `PATCH /coach/notes/{id}` |
 | Программы клиента (тренер) | `GET/POST /coach/clients/{id}/programs`, `POST .../programs/{pid}/schedule`, `GET /coach/clients/{id}/overview`, `GET /coach/clients/{id}/exercises/{eid}/history` |
 | Обзор и рекорды | `GET /stats/overview`, `GET /stats/records`; оценка тренировки — поля `wellbeing`, `difficulty`, `feedback_comment` в `PATCH /scheduled-workouts/{id}` |
@@ -297,3 +304,45 @@ backend/
   alembic/      миграции
   tests/        тесты
 ```
+
+## Почта: подтверждение адреса и письма о заявках
+
+После регистрации (и после смены почты в профиле) человеку уходит письмо
+со ссылкой подтверждения. Пока почта не подтверждена, в приложении
+висит плашка с кнопкой «Отправить ещё раз». Войти можно и без
+подтверждения. О каждой новой заявке с главной приходит письмо тренеру
+(`LEAD_NOTIFY_EMAILS`, по умолчанию — `COACH_EMAILS`).
+
+Пока `SMTP_HOST` не задан, письма не отправляются, а печатаются в консоль
+сервера — ссылку подтверждения можно скопировать оттуда.
+
+### Бесплатно через Яндекс Почту
+
+1. Заведите ящик для сайта, например `greeks.gym@yandex.ru` (или возьмите свой).
+2. В Почте: **Настройки → Почтовые программы** — включите доступ
+   по IMAP и отметьте «Пароли приложений и OAuth-токены».
+3. На id.yandex.ru: **Безопасность → Пароли приложений → Почта** —
+   создайте пароль и скопируйте его (показывается один раз).
+4. Впишите в `.env`:
+
+   ```
+   SMTP_HOST=smtp.yandex.ru
+   SMTP_PORT=465
+   SMTP_USER=greeks.gym@yandex.ru
+   SMTP_PASSWORD=пароль-приложения-из-шага-3
+   SMTP_FROM=greeks.gym@yandex.ru
+   FRONTEND_URL=http://localhost:5173
+   ```
+
+   На сервере в `FRONTEND_URL` укажите настоящий адрес сайта — из него
+   собираются ссылки в письмах.
+5. Примените миграцию и перезапустите бэкенд:
+
+   ```bash
+   cd backend
+   alembic upgrade head
+   uvicorn app.main:app --reload
+   ```
+
+Подойдёт и любой другой SMTP (Mail.ru, SendPulse, Unisender Go):
+поменяйте `SMTP_HOST`, `SMTP_PORT` (465 — SSL, 587 — STARTTLS), логин и пароль.

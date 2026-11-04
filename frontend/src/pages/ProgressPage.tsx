@@ -4,6 +4,7 @@
 import { useState } from "react";
 
 import { stats, workouts as workoutsApi } from "../api";
+import { BodyWeightSection } from "../components/BodyWeight";
 import { BarChart } from "../components/Charts";
 import { PeriodSwitch, periodStart } from "../components/Coaching";
 import { ExerciseProgress } from "../components/ExerciseProgress";
@@ -69,6 +70,8 @@ export function ProgressPage() {
         <section aria-label="Обзор">
           <OverviewFigures overview={overview} />
         </section>
+
+        <BodyWeightSection since={from} />
 
         <section className="block" aria-labelledby="exercise-progress-title">
           <h2 className="block-title" id="exercise-progress-title">Прогресс по упражнениям</h2>

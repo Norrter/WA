@@ -10,6 +10,7 @@ password_hash = PasswordHash.recommended()
 
 ACCESS_TOKEN_TYPE = "access"
 REFRESH_TOKEN_TYPE = "refresh"
+EMAIL_TOKEN_TYPE = "verify_email"
 
 
 def hash_password(password: str) -> str:
@@ -85,3 +86,17 @@ def decode_access_token(token: str) -> dict:
 
 def decode_refresh_token(token: str) -> dict:
     return _decode_token(token, REFRESH_TOKEN_TYPE)
+
+
+def create_email_token(user_id: int, email: str) -> str:
+    """Ссылка из письма: кто и какой адрес подтверждает.
+    Если человек сменит почту, старая ссылка перестанет подходить."""
+    return _create_token(
+        {"sub": str(user_id), "email": email.lower()},
+        EMAIL_TOKEN_TYPE,
+        timedelta(hours=settings.email_verify_hours),
+    )
+
+
+def decode_email_token(token: str) -> dict:
+    return _decode_token(token, EMAIL_TOKEN_TYPE)

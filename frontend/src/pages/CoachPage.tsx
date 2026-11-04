@@ -2,7 +2,7 @@
 
 import { useMemo, useState, type FormEvent } from "react";
 
-import { coach } from "../api";
+import { coach, leads as leadsApi } from "../api";
 import type { CoachClientLink, ClientMetrics } from "../api/types";
 import {
   FlagBadge,
@@ -118,6 +118,8 @@ export function CoachPage() {
         subtitle={`Показатели с ${formatDay(from)} по сегодня`}
         actions={<PeriodSwitch weeks={weeks} onChange={setWeeks} />}
       />
+
+      <LeadsBanner />
 
       <div className={state.loading ? "is-refreshing" : ""}>
         <dl className="figures">
@@ -312,5 +314,36 @@ function AddClientForm({ onAdded }: { onAdded: () => void }) {
         назначать программы. У клиента может быть только один тренер.
       </p>
     </section>
+  );
+}
+
+// Заявки с главной: сколько новых, ссылка на список
+function LeadsBanner() {
+  const state = useAsync(() => leadsApi.list(), []);
+  const all = state.data ?? [];
+  const fresh = all.filter((lead) => lead.status === "new").length;
+  const working = all.filter((lead) => lead.status === "in_progress").length;
+
+  return (
+    <a className={`leads-banner ${fresh ? "has-new" : ""}`} href="#/coach/leads">
+      <span className="leads-banner-icon" aria-hidden="true">
+        <Icon name="send" size={20} />
+      </span>
+      <span className="leads-banner-text">
+        <strong>
+          {fresh ? `Новые заявки с сайта: ${fresh}` : "Заявки с сайта"}
+        </strong>
+        <span>
+          {state.data
+            ? working
+              ? `В работе: ${working}`
+              : fresh
+                ? "Свяжитесь с людьми, пока они ждут ответа"
+                : "Новых нет — здесь появятся заявки с главной страницы"
+            : "Загрузка…"}
+        </span>
+      </span>
+      <Icon name="right" size={18} strokeWidth={2} />
+    </a>
   );
 }

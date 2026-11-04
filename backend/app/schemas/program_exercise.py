@@ -52,6 +52,8 @@ class ExerciseShortResponse(BaseModel):
 
     id: int
     name: str
+    # как считать нагрузку (см. app/core/load.py)
+    load_type: str = "external"
 
 
 class ProgramExerciseResponse(BaseModel):

@@ -70,6 +70,7 @@ async def test_program_detail_contains_days_and_exercises_in_order(client, alice
     assert exercises[0]["exercise"] == {
         "id": exercise["id"],
         "name": exercise["name"],
+        "load_type": "external",
     }
 
 
