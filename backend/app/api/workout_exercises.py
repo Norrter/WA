@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.helpers import apply_changes, get_owned_workout, get_visible_exercise
 from app.api.scheduled_workouts import workout_detail
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, require_open_diary
 from app.database.session import get_session
 from app.models.scheduled_workout import ScheduledWorkout
 from app.models.user import User
@@ -34,6 +34,8 @@ from app.services.workout_plan import (
 router = APIRouter(
     prefix="/scheduled-workouts/{scheduled_workout_id}",
     tags=["Workout Exercises"],
+    # с неподтверждённой почтой — только просмотр
+    dependencies=[Depends(require_open_diary)],
 )
 
 

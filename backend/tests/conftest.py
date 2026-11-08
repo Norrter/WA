@@ -51,6 +51,9 @@ os.environ["SECRET_KEY"] = "test-secret-key-not-for-production-0123456789"
 os.environ["SQL_ECHO"] = "false"
 # Тесты никогда не шлют настоящие письма, даже если в .env настроен SMTP
 os.environ["SMTP_HOST"] = ""
+# Замок дневника в обычных тестах выключен (дата в далёком будущем);
+# его проверяют отдельные тесты, сдвигая дату
+os.environ["EMAIL_REQUIRED_SINCE"] = "2100-01-01T00:00:00+00:00"
 
 import httpx  # noqa: E402
 import pytest_asyncio  # noqa: E402

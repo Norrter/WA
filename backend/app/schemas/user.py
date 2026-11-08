@@ -49,5 +49,7 @@ class UserResponse(BaseModel):
     is_admin: bool = False
     # почта подтверждена по ссылке из письма
     email_verified: bool = False
+    # тренировки и питание недоступны, пока почта не подтверждена
+    diary_locked: bool = False
     created_at: datetime
     updated_at: datetime

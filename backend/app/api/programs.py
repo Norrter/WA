@@ -10,12 +10,12 @@ from app.api.helpers import (
     get_owned_program,
     program_access,
 )
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_coach, get_current_user, require_open_diary
 from app.database.session import get_session
 from app.models.program import Program
 from app.models.program_day import ProgramDay
 from app.models.program_exercise import ProgramExercise
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.program import (
     ProgramCreate,
     ProgramDetailResponse,
@@ -33,6 +33,8 @@ from app.services.programs import (
 router = APIRouter(
     prefix="/programs",
     tags=["Programs"],
+    # с неподтверждённой почтой — только просмотр
+    dependencies=[Depends(require_open_diary)],
 )
 
 
@@ -85,10 +87,10 @@ async def get_programs(
 )
 async def get_program_templates(
     session: AsyncSession = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_coach),
 ):
-    """Готовые программы, общие для всех. Их нельзя менять,
-    но можно взять себе копию: POST /programs/{id}/copy."""
+    """Готовые программы — заготовки ТОЛЬКО для тренера: он назначает
+    их клиентам. Обычным пользователям они не выдаются."""
     result = await session.execute(
         select(Program)
         .options(
@@ -118,9 +120,10 @@ async def copy_program(
     можно менять как угодно, с оригиналом она не связана."""
     source = await load_program_tree(session, program_id)
 
+    # Готовую программу (без владельца) копирует только тренер
     readable = source is not None and (
-        source.user_id is None
-        or (await program_access(source, session, current_user))[0]
+        (source.user_id is None and current_user.role == UserRole.coach.value)
+        or (source.user_id is not None and (await program_access(source, session, current_user))[0])
     )
 
     if not readable:

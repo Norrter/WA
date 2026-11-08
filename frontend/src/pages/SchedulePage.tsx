@@ -6,6 +6,8 @@ import { useState } from "react";
 import { workouts } from "../api";
 import { useScene } from "../components/Scene";
 import { AutoPlanDialog, PlanWorkoutDialog } from "../components/ScheduleDialogs";
+import { useToast } from "../components/Toast";
+import type { ScheduledWorkout } from "../api/types";
 import {
   Button,
   displayStatus,
@@ -14,6 +16,7 @@ import {
   Loading,
   PageHeader,
   StatusPill,
+  useConfirm,
 } from "../components/ui";
 import {
   addDays,
@@ -27,6 +30,7 @@ import {
   WEEKDAYS_SHORT,
 } from "../lib/dates";
 import { loadProgramDetails } from "../lib/data";
+import { plural } from "../lib/format";
 import { useAsync } from "../lib/useAsync";
 import { workoutNames } from "../lib/workouts";
 
@@ -44,6 +48,9 @@ export function SchedulePage() {
   const [dialog, setDialog] = useState<
     { kind: "plan"; date?: string } | { kind: "auto" } | null
   >(null);
+  const toast = useToast();
+  const [confirmDialog, confirm] = useConfirm();
+  const [busy, setBusy] = useState<number | "all" | null>(null);
 
   // Сетка месяца: 6 недель, начиная с понедельника недели, где 1-е число
   const firstOfMonth = toISO(new Date(cursor.year, cursor.month, 1));
@@ -110,6 +117,63 @@ export function SchedulePage() {
     void workoutsState.reload();
   };
 
+  // «Отменить» у тренировки: сразу убираем её из плана
+  const cancelOne = async (workout: ScheduledWorkout) => {
+    setBusy(workout.id);
+    try {
+      await workouts.remove(workout.id);
+      toast.success("Тренировка отменена");
+      await workoutsState.reload();
+    } catch (error) {
+      toast.error(error);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const markSkipped = async (workout: ScheduledWorkout) => {
+    setBusy(workout.id);
+    try {
+      await workouts.patch(workout.id, { status: "skipped" });
+      toast.success("Отмечено как пропуск");
+      await workoutsState.reload();
+    } catch (error) {
+      toast.error(error);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  // «Отменить все»: все запланированные, включая прошедшие неотмеченные
+  const cancelAll = async () => {
+    setBusy("all");
+    try {
+      const { count } = await workouts.cancelAll({ dry_run: true });
+
+      if (count === 0) {
+        toast.success("Запланированных тренировок нет");
+        return;
+      }
+
+      const ok = await confirm(
+        `Отменить все запланированные тренировки (${count})? `
+          + "Выполненные и уже начатые останутся в истории.",
+        "Отменить все",
+      );
+      if (!ok) return;
+
+      const result = await workouts.cancelAll();
+      toast.success(
+        `Отменено ${result.count} ${plural(result.count, "тренировка", "тренировки", "тренировок")}`,
+      );
+      await workoutsState.reload();
+    } catch (error) {
+      toast.error(error);
+    } finally {
+      setBusy(null);
+    }
+  };
+
   return (
     <div className="page schedule-page">
       <PageHeader
@@ -118,6 +182,9 @@ export function SchedulePage() {
           <>
             <Button icon="repeat" onClick={() => setDialog({ kind: "auto" })}>
               Автоплан
+            </Button>
+            <Button icon="close" busy={busy === "all"} onClick={() => void cancelAll()}>
+              Отменить все
             </Button>
             <Button variant="primary" icon="plus" onClick={() => setDialog({ kind: "plan" })}>
               Запланировать
@@ -227,6 +294,16 @@ export function SchedulePage() {
                           ? "Открыть"
                           : "Открыть план"}
                   </a>
+                  {workout.status === "planned" && (
+                    <Button
+                      className="btn-block"
+                      icon="close"
+                      busy={busy === workout.id}
+                      onClick={() => void cancelOne(workout)}
+                    >
+                      Отменить
+                    </Button>
+                  )}
                 </article>
               );
             })}
@@ -243,15 +320,30 @@ export function SchedulePage() {
 
               return (
                 <div key={workout.id} className="attention">
-                  <div className="attention-text">
+                  {/* Открыть, чтобы записать подходы задним числом */}
+                  <a className="attention-text attention-link" href={`#/workouts/${workout.id}`}>
                     <strong>
                       {capitalize(formatDayWithWeekday(workout.scheduled_date))} · {dayName}
                     </strong>
-                    <span>Тренировка не отмечена</span>
-                  </div>
-                  <a className="btn btn-cold btn-small" href={`#/workouts/${workout.id}`}>
-                    Отметить
+                    <span>Не отмечена — нажмите, чтобы записать</span>
                   </a>
+                  <div className="attention-actions">
+                    <Button
+                      small
+                      disabled={busy === workout.id}
+                      onClick={() => void markSkipped(workout)}
+                    >
+                      Пропущена
+                    </Button>
+                    <Button
+                      small
+                      icon="close"
+                      busy={busy === workout.id}
+                      onClick={() => void cancelOne(workout)}
+                    >
+                      Отменить
+                    </Button>
+                  </div>
                 </div>
               );
             })}
@@ -267,6 +359,8 @@ export function SchedulePage() {
           onDone={reload}
         />
       )}
+
+      {confirmDialog}
 
       {dialog?.kind === "auto" && (
         <AutoPlanDialog programs={programs} onClose={() => setDialog(null)} onDone={reload} />

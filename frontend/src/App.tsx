@@ -4,6 +4,7 @@ import { useAuth } from "./components/Auth";
 import { Layout } from "./components/Layout";
 import { Empty, Loading } from "./components/ui";
 import { useRoute } from "./lib/router";
+import { DiaryLocked } from "./components/DiaryLocked";
 import { VerifyEmailPage } from "./pages/VerifyEmailPage";
 import { AdminPage } from "./pages/AdminPage";
 import { CoachPage } from "./pages/CoachPage";
@@ -122,6 +123,10 @@ export function App() {
         </Empty>
       );
   }
+
+  // Новый аккаунт без подтверждённой почты: везде, кроме профиля,
+  // карточка «Подтвердите почту» (в профиле можно исправить адрес)
+  if (user.diary_locked && route.name !== "profile") page = <DiaryLocked />;
 
   return <Layout route={route}>{page}</Layout>;
 }

@@ -8,7 +8,7 @@ from app.api.helpers import (
     get_owned_program_day,
     get_visible_exercise,
 )
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, require_open_diary
 from app.database.session import get_session
 from app.models.program_exercise import ProgramExercise
 from app.models.user import User
@@ -24,6 +24,8 @@ from app.schemas.program_exercise import (
 router = APIRouter(
     prefix="/programs/{program_id}/days/{day_id}/exercises",
     tags=["Program Exercises"],
+    # с неподтверждённой почтой — только просмотр
+    dependencies=[Depends(require_open_diary)],
 )
 
 

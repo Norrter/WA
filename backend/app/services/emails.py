@@ -93,3 +93,52 @@ async def send_lead_notice(name: str, contact: str, offer_title: str | None, goa
 
     for to in recipients:
         await send_email(to, f"Новая заявка: {name}", text, html)
+
+
+MONTHS_GENITIVE = [
+    "января", "февраля", "марта", "апреля", "мая", "июня",
+    "июля", "августа", "сентября", "октября", "ноября", "декабря",
+]
+
+
+def day_text(value) -> str:
+    """5 ноября"""
+    return f"{value.day} {MONTHS_GENITIVE[value.month - 1]}"
+
+
+async def send_coach_comment(
+    *,
+    to: str,
+    username: str,
+    coach_name: str,
+    workout_id: int,
+    workout_name: str,
+    workout_date,
+    comment: str,
+) -> None:
+    """Клиенту: тренер прокомментировал его тренировку."""
+    link = f"{settings.frontend_url.rstrip('/')}/#/workouts/{workout_id}"
+    when = day_text(workout_date)
+
+    text = (
+        f"Здравствуйте, {username}!\n\n"
+        f"Тренер {coach_name} прокомментировал тренировку «{workout_name}» за {when}:\n\n"
+        f"{comment}\n\n"
+        f"Открыть тренировку: {link}"
+    )
+    quote = escape(comment).replace("\n", "<br>")
+    html = _layout(
+        "Комментарий тренера",
+        f"""<p style="margin:0 0 14px;font-size:15px;line-height:1.55">
+            {escape(coach_name)} прокомментировал тренировку
+            <b>«{escape(workout_name)}»</b> за {escape(when)}:</p>
+          <div style="margin:0 0 22px;padding:14px 16px;border-left:3px solid #f47a36;
+                      background:#f7f2ec;border-radius:8px;font-size:15px;line-height:1.55">
+            {quote}</div>
+          <p style="margin:0">
+            <a href="{escape(link)}" style="display:inline-block;padding:14px 22px;border-radius:12px;
+               background:#f47a36;color:#1a0d05;font-weight:bold;font-size:15px;text-decoration:none">
+               Открыть тренировку</a></p>""",
+    )
+
+    await send_email(to, f"Комментарий тренера к тренировке за {when}", text, html)

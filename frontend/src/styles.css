@@ -9217,3 +9217,298 @@ a.week-dot.is-done:hover {
 .verify-card .btn {
   text-decoration: none;
 }
+
+/* Тренировка и питание закрыты до подтверждения почты */
+.diary-locked {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  max-width: 560px;
+  padding: 28px 24px;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+
+.diary-locked-icon {
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  margin-bottom: 4px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-light);
+}
+
+.diary-locked-title {
+  margin: 0;
+  font: 800 26px/1.15 var(--font-display);
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.diary-locked-text {
+  margin: 0;
+  font: 500 15.5px/1.55 var(--font-ui);
+  color: var(--text-strong);
+  overflow-wrap: anywhere;
+}
+
+.diary-locked-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 10px 0 4px;
+}
+
+@media (max-width: 560px) {
+  .diary-locked-actions .btn {
+    flex: 1 1 100%;
+  }
+}
+
+/* =====================================================================
+   Приложение: статичный фон и без анимаций появления —
+   на телефонах так не лагает. Главная для гостей не затронута.
+   ===================================================================== */
+
+:root body.app-shell .scene-layer,
+:root body.app-shell .scene-image {
+  transform: none;
+  animation: none;
+  will-change: auto;
+}
+
+:root body.app-shell .page,
+:root body.app-shell .logger,
+:root body.app-shell .rest,
+:root body.app-shell .menu.open,
+:root body.app-shell .menu-list li {
+  animation: none;
+}
+
+/* Геракл на «Сегодня»: на телефоне видны голова с нимбом и рука */
+@media (max-width: 900px) {
+  :root body.app-shell .scene-image[data-scene="struggle"] {
+    background-position: 4% 3%;
+  }
+}
+
+/* На телефоне вместо размытия «стекла» — плотная заливка:
+   размытие пересчитывается при каждой прокрутке и тормозит */
+@media (max-width: 960px) {
+  :root body.app-shell {
+    --glass-blur: none;
+    --surface: rgb(46 47 50 / 0.88);
+    --veil-strong: rgb(27 28 30 / 0.95);
+    --sheet: rgb(40 41 44 / 0.97);
+  }
+
+  :root[data-theme="light"] body.app-shell {
+    --surface: rgb(255 255 255 / 0.88);
+    --veil-strong: rgb(250 248 245 / 0.95);
+    --sheet: rgb(250 248 245 / 0.98);
+  }
+}
+
+/* Варианты-плашки (дни недели, «+1 день», «Всё будущее»):
+   крупные, выбранный — залит оранжевым */
+:root .chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-2);
+  font: 700 14px/1 var(--font-ui);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text);
+  cursor: pointer;
+}
+
+:root .chip:hover {
+  border-color: var(--border-accent);
+}
+
+:root .chip.active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+:root .chip.active::after {
+  content: none;
+}
+
+/* Расписание: «Требует внимания» — открыть по названию, рядом «Пропущена» и «Отменить» */
+.attention-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.attention-link:hover strong {
+  color: var(--accent-light);
+}
+
+.attention-actions {
+  display: flex;
+  flex: none;
+  gap: 8px;
+}
+
+.day-workout .btn + .btn {
+  margin-top: 8px;
+}
+
+@media (max-width: 960px) {
+  /* «Автоплан» и «Отменить все» в ряд, «Запланировать» под ними */
+  :root .schedule-page .page-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  :root .schedule-page .page-actions > .btn-primary {
+    grid-column: 1 / -1;
+  }
+
+  .attention {
+    flex-wrap: wrap;
+  }
+
+  .attention-actions {
+    width: 100%;
+  }
+
+  .attention-actions > * {
+    flex: 1 1 0;
+  }
+}
+
+/* Выбор программы карточками (назначить программу клиенту) */
+.program-pick {
+  display: grid;
+  gap: 8px;
+}
+
+.program-pick-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 60px;
+  padding: 12px 14px;
+  border: 1px solid var(--field-border);
+  border-radius: 14px;
+  background: var(--field);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s var(--ease), background-color 0.2s var(--ease);
+}
+
+.program-pick-item:hover {
+  border-color: var(--border-accent);
+}
+
+.program-pick-item.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.program-pick-mark {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  box-sizing: border-box;
+  border: 2px solid var(--text-soft);
+  border-radius: 50%;
+}
+
+.program-pick-item.active .program-pick-mark {
+  border: 6px solid var(--accent);
+}
+
+.program-pick-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.program-pick-text strong {
+  font: 700 15px/1.3 var(--font-ui);
+}
+
+.program-pick-text span {
+  font: 500 13px/1.3 var(--font-ui);
+  color: var(--text-soft);
+}
+
+.program-pick-tag {
+  flex: none;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  font: 700 12px/1 var(--font-ui);
+  color: var(--text-soft);
+}
+
+/* Пункты выпадающих списков: непрозрачный фон и читаемый текст в обеих темах */
+:root select option,
+:root select optgroup {
+  background-color: #2a2b2e;
+  color: #f2f2f3;
+}
+
+:root select optgroup {
+  color: #b2b4b8;
+  font-weight: 700;
+}
+
+:root[data-theme="light"] select option,
+:root[data-theme="light"] select optgroup {
+  background-color: #ffffff;
+  color: #1a1714;
+}
+
+:root[data-theme="light"] select optgroup {
+  color: #5c554d;
+}
+
+/* Прайс: четыре тарифа в ряд на широком экране */
+@media (min-width: 1100px) {
+  .landing-offers {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1099px) {
+  .landing-offers {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* В четыре колонки: цена крупно, «за 5 тренировок» — строкой под ней */
+@media (min-width: 1100px) {
+  :root .landing-offers .offer-price {
+    font-size: 36px;
+  }
+
+  :root .landing-offers .offer-price small {
+    display: block;
+    margin-top: 8px;
+  }
+
+  :root .landing-offers .offer-title {
+    font-size: 26px;
+  }
+}

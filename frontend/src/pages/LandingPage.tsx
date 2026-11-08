@@ -68,8 +68,8 @@ export function LandingPage() {
             className="hero-trainer"
             src={TRAINER.photo}
             alt={`${TRAINER.name}, ${TRAINER.role.toLowerCase()}`}
-            width={692}
-            height={961}
+            width={805}
+            height={1100}
             fetchPriority="high"
           />
         </div>

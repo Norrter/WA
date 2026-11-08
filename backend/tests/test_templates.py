@@ -1,5 +1,6 @@
 import pytest_asyncio
 
+from app.config import settings
 from app.database.session import AsyncSessionLocal
 from app.models import Program, ProgramDay, ProgramExercise
 from tests.helpers import (
@@ -8,7 +9,15 @@ from tests.helpers import (
     create_program,
     create_program_exercise,
     create_workout,
+    register_and_login,
 )
+
+
+@pytest_asyncio.fixture
+async def coach(client, monkeypatch):
+    """Готовые программы видит и копирует только тренер."""
+    monkeypatch.setattr(settings, "coach_emails", ["coach@example.com"])
+    return await register_and_login(client, "coach")
 
 
 @pytest_asyncio.fixture
@@ -43,17 +52,23 @@ async def template(shared_exercise):
         return program.id
 
 
-async def test_templates_are_listed_for_everyone(client, alice, bob, template):
-    for headers in (alice, bob):
-        response = await client.get("/programs/templates", headers=headers)
-        assert response.status_code == 200
-        body = response.json()
-        assert [item["id"] for item in body] == [template]
+async def test_templates_are_for_coaches_only(client, alice, coach, template):
+    # обычному пользователю готовые программы не выдаются
+    response = await client.get("/programs/templates", headers=alice)
+    assert response.status_code == 403
 
-        exercise = body[0]["days"][0]["exercises"][0]
-        assert exercise["target_reps"] == 8
-        assert exercise["target_reps_max"] == 12
-        assert exercise["notes"] == "Суперсет"
+    response = await client.post(f"/programs/{template}/copy", headers=alice)
+    assert response.status_code == 404
+
+    response = await client.get("/programs/templates", headers=coach)
+    assert response.status_code == 200
+    body = response.json()
+    assert [item["id"] for item in body] == [template]
+
+    exercise = body[0]["days"][0]["exercises"][0]
+    assert exercise["target_reps"] == 8
+    assert exercise["target_reps_max"] == 12
+    assert exercise["notes"] == "Суперсет"
 
     # в списке своих программ шаблона нет
     assert (await client.get("/programs", headers=alice)).json() == []
@@ -63,7 +78,7 @@ async def test_templates_require_auth(client):
     assert (await client.get("/programs/templates")).status_code in (401, 403)
 
 
-async def test_template_cannot_be_changed_or_scheduled(client, alice, template):
+async def test_template_cannot_be_changed_or_scheduled(client, alice, coach, template):
     url = f"/programs/{template}"
 
     assert (await client.get(url, headers=alice)).status_code == 404
@@ -93,18 +108,18 @@ async def test_template_cannot_be_changed_or_scheduled(client, alice, template):
     assert response.status_code == 404
 
     # шаблон на месте и не изменился
-    templates = (await client.get("/programs/templates", headers=alice)).json()
+    templates = (await client.get("/programs/templates", headers=coach)).json()
     assert templates[0]["name"] == "Готовый сплит"
     assert len(templates[0]["days"]) == 1
 
 
-async def test_copy_template(client, alice, template):
-    response = await client.post(f"/programs/{template}/copy", headers=alice)
+async def test_coach_copies_template(client, coach, template):
+    response = await client.post(f"/programs/{template}/copy", headers=coach)
     assert response.status_code == 201
     copy_id = response.json()["id"]
     assert copy_id != template
 
-    copy = (await client.get(f"/programs/{copy_id}", headers=alice)).json()
+    copy = (await client.get(f"/programs/{copy_id}", headers=coach)).json()
     assert copy["name"] == "Готовый сплит"
     assert copy["description"] == "Шаблон для всех"
     assert [day["name"] for day in copy["days"]] == ["День 1"]
@@ -118,18 +133,18 @@ async def test_copy_template(client, alice, template):
     response = await client.patch(
         f"/programs/{copy_id}/days/{day_id}/exercises/{item['id']}",
         json={"sets": 2},
-        headers=alice,
+        headers=coach,
     )
     assert response.status_code == 200
 
-    await client.patch(f"/programs/{copy_id}", json={"name": "Мой сплит"}, headers=alice)
-    await create_workout(client, alice, copy_id, day_id)
+    await client.patch(f"/programs/{copy_id}", json={"name": "Мой сплит"}, headers=coach)
+    await create_workout(client, coach, copy_id, day_id)
 
-    templates = (await client.get("/programs/templates", headers=alice)).json()
+    templates = (await client.get("/programs/templates", headers=coach)).json()
     assert templates[0]["name"] == "Готовый сплит"
     assert templates[0]["days"][0]["exercises"][0]["sets"] == 4
 
-    programs = (await client.get("/programs", headers=alice)).json()
+    programs = (await client.get("/programs", headers=coach)).json()
     assert [program["name"] for program in programs] == ["Мой сплит"]
 
 

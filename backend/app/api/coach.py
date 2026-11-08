@@ -9,7 +9,7 @@
 from datetime import date, datetime, timedelta, timezone
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Response, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -28,6 +28,7 @@ from app.models.program_day import ProgramDay
 from app.models.scheduled_workout import ScheduledWorkout
 from app.models.user import User
 from app.models.workout_set import WorkoutSet
+from app.services.emails import send_coach_comment
 from app.schemas.coach import (
     AssignProgramRequest,
     AssignProgramResponse,
@@ -469,12 +470,15 @@ async def set_workout_comment(
     client_id: int,
     workout_id: int,
     data: CoachCommentInput,
+    background: BackgroundTasks,
     session: AsyncSession = Depends(get_session),
     coach: User = Depends(get_current_coach),
 ):
     """Комментарий тренера к тренировке. Клиент видит его в своей
-    тренировке. Пустой текст удаляет комментарий."""
+    тренировке и получает письмо (если почта подтверждена).
+    Пустой текст удаляет комментарий."""
     workout = await get_client_workout(session, coach, client_id, workout_id)
+    previous = workout.coach_comment
 
     if data.text:
         workout.coach_comment = data.text
@@ -486,6 +490,23 @@ async def set_workout_comment(
         workout.coach_comment_by = None
 
     await session.commit()
+
+    # Письмо клиенту — только о новом или изменённом комментарии
+    # и только на подтверждённую почту
+    if data.text and data.text != previous:
+        client_user = await session.get(User, client_id)
+
+        if client_user is not None and client_user.email_verified:
+            background.add_task(
+                send_coach_comment,
+                to=client_user.email,
+                username=client_user.username,
+                coach_name=coach.username,
+                workout_id=workout.id,
+                workout_name=workout.day_name or workout.program_name or "Тренировка",
+                workout_date=workout.scheduled_date,
+                comment=data.text,
+            )
 
     return {
         "coach_comment": workout.coach_comment,

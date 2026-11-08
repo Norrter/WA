@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, require_open_diary
 from app.database.session import get_session
 from app.models.body_weight import BodyWeightEntry
 from app.models.user import User
@@ -14,7 +14,12 @@ from app.schemas.body_weight import BodyWeightEntryResponse, BodyWeightInput
 from app.services.body_weight import record, sync_current
 
 
-router = APIRouter(prefix="/body-weight", tags=["Body weight"])
+router = APIRouter(
+    prefix="/body-weight",
+    tags=["Body weight"],
+    # с неподтверждённой почтой — только просмотр
+    dependencies=[Depends(require_open_diary)],
+)
 
 
 async def body_weight_list(

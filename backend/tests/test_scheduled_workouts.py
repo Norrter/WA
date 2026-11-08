@@ -341,3 +341,35 @@ async def test_scheduled_workouts_are_private(client, alice, bob):
 async def test_scheduled_workouts_require_auth(client):
     assert (await client.get("/scheduled-workouts")).status_code in (401, 403)
     assert (await client.get("/scheduled-workouts/1")).status_code in (401, 403)
+
+
+
+# ----- «Отменить все» -----
+
+async def test_cancel_all_keeps_history(client, alice, bob):
+    program = await create_program(client, alice)
+    day = await create_day(client, alice, program["id"])
+
+    done = await create_workout(client, alice, program["id"], day["id"], "2026-10-20", "completed")
+    skipped = await create_workout(client, alice, program["id"], day["id"], "2026-10-21", "skipped")
+    unmarked = await create_workout(client, alice, program["id"], day["id"], "2026-10-26")
+    future = await create_workout(client, alice, program["id"], day["id"], "2026-11-20")
+
+    # начатая: есть подход
+    data = await build_workout(client, alice, "2026-10-28")
+    await create_set(client, alice, data["workout"]["id"], data["program_exercise"]["id"])
+
+    response = await client.post("/scheduled-workouts/cancel-all", headers=alice, json={"dry_run": True})
+    assert response.json() == {"count": 2}
+    assert len((await client.get("/scheduled-workouts", headers=alice)).json()) == 5
+
+    # чужие тренировки не трогаются
+    response = await client.post("/scheduled-workouts/cancel-all", headers=bob, json={})
+    assert response.json() == {"count": 0}
+
+    response = await client.post("/scheduled-workouts/cancel-all", headers=alice, json={})
+    assert response.json() == {"count": 2}
+
+    left = {w["id"] for w in (await client.get("/scheduled-workouts", headers=alice)).json()}
+    assert left == {done["id"], skipped["id"], data["workout"]["id"]}
+    assert unmarked["id"] not in left and future["id"] not in left

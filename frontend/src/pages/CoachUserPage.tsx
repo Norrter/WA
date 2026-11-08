@@ -7,7 +7,7 @@ import { useState, type FormEvent } from "react";
 
 import { coach, programs as programsApi } from "../api";
 import { ApiError } from "../api/client";
-import type { CoachNote, Program, ProgramDetail } from "../api/types";
+import type { CoachNote, ProgramDetail } from "../api/types";
 import { ClientBodyWeight } from "../components/BodyWeight";
 import { ClientNutrition } from "../components/ClientNutrition";
 import { BarChart } from "../components/Charts";
@@ -44,6 +44,7 @@ import {
   today,
   WEEKDAYS_SHORT,
 } from "../lib/dates";
+import { loadProgramDetails } from "../lib/data";
 import { formatNumber, formatWeight, plural } from "../lib/format";
 import { navigate } from "../lib/router";
 import { useAsync } from "../lib/useAsync";
@@ -502,8 +503,9 @@ function AssignProgramDialog({
   onDone: (programId: number) => void;
 }) {
   const toast = useToast();
+  // Свои программы — с днями и упражнениями, чтобы показать их состав
   const sources = useAsync(
-    () => Promise.all([programsApi.list(), programsApi.templates()]),
+    () => Promise.all([loadProgramDetails(), programsApi.templates()]),
     [],
   );
   const [programId, setProgramId] = useState<number | null>(null);
@@ -513,7 +515,7 @@ function AssignProgramDialog({
   const [weekdays, setWeekdays] = useState<number[]>([0, 2, 4]);
   const [busy, setBusy] = useState(false);
 
-  const own: Program[] = sources.data?.[0].filter((program) => !program.assigned_by) ?? [];
+  const own: ProgramDetail[] = sources.data?.[0].filter((program) => !program.assigned_by) ?? [];
   const templates: ProgramDetail[] = sources.data?.[1] ?? [];
   const chosen = programId ?? own[0]?.id ?? templates[0]?.id ?? null;
 
@@ -563,27 +565,41 @@ function AssignProgramDialog({
             занимается по ней, но менять не может. Ваш шаблон не изменится.
           </p>
 
-          <Field label="Программа">
-            <select
-              value={chosen ?? ""}
-              onChange={(event) => setProgramId(Number(event.target.value))}
-            >
-              {own.length > 0 && (
-                <optgroup label="Мои программы">
-                  {own.map((program) => (
-                    <option key={program.id} value={program.id}>{program.name}</option>
-                  ))}
-                </optgroup>
-              )}
-              {templates.length > 0 && (
-                <optgroup label="Готовые программы">
-                  {templates.map((program) => (
-                    <option key={program.id} value={program.id}>{program.name}</option>
-                  ))}
-                </optgroup>
-              )}
-            </select>
-          </Field>
+          {/* Выбор программы карточками: видно состав, одинаковые названия не путаются */}
+          <fieldset className="field">
+            <legend className="field-label">Программа</legend>
+            <div className="program-pick" role="radiogroup" aria-label="Программа">
+              {[
+                ...own.map((program) => ({ program, ready: false })),
+                ...templates.map((program) => ({ program, ready: true })),
+              ].map(({ program, ready }) => {
+                const exercises = program.days.reduce((sum, day) => sum + day.exercises.length, 0);
+                const active = chosen === program.id;
+
+                return (
+                  <button
+                    key={program.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    className={`program-pick-item ${active ? "active" : ""}`}
+                    onClick={() => setProgramId(program.id)}
+                  >
+                    <span className="program-pick-mark" aria-hidden="true" />
+                    <span className="program-pick-text">
+                      <strong>{program.name}</strong>
+                      <span>
+                        {program.days.length} {plural(program.days.length, "день", "дня", "дней")}
+                        {" · "}
+                        {exercises} {plural(exercises, "упражнение", "упражнения", "упражнений")}
+                      </span>
+                    </span>
+                    {ready && <span className="program-pick-tag">Готовая</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </fieldset>
 
           <label className="toggle">
             <input

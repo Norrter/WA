@@ -39,7 +39,8 @@ function solemnDate(value: string): string {
 }
 
 export function TodayPage() {
-  useScene("olympus");
+  // Геракл в схватке, золотой нимб
+  useScene("struggle");
 
   const user = useUser();
   const now = today();

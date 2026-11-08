@@ -1,7 +1,7 @@
 from datetime import date, datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import func, select
+from sqlalchemy import exists, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -11,7 +11,7 @@ from app.api.helpers import (
     get_owned_workout,
     get_schedulable_program,
 )
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, require_open_diary
 from app.database.session import get_session
 from app.models.exercise import Exercise
 from app.models.program import Program
@@ -23,6 +23,8 @@ from app.models.workout_set import WorkoutSet
 from app.services.workout_plan import workout_items
 from app.schemas.scheduled_workout import (
     GenerateScheduleRequest,
+    CancelPlanRequest,
+    PlanChangeResponse,
     ScheduledWorkoutCreate,
     ScheduledWorkoutDetailResponse,
     ScheduledWorkoutPatch,
@@ -35,6 +37,8 @@ from app.services.programs import schedule_program
 router = APIRouter(
     prefix="/scheduled-workouts",
     tags=["Scheduled Workouts"],
+    # с неподтверждённой почтой — только просмотр
+    dependencies=[Depends(require_open_diary)],
 )
 
 FEEDBACK_FIELDS = {"wellbeing", "difficulty", "feedback_comment"}
@@ -134,6 +138,38 @@ async def generate_schedule(
     await session.commit()
 
     return workouts
+
+
+# ----- «Отменить все» -----
+
+@router.post("/cancel-all", response_model=PlanChangeResponse)
+async def cancel_all(
+    data: CancelPlanRequest,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Убрать из плана все запланированные тренировки (или с даты /
+    по одной программе). Выполненные, пропущенные и начатые остаются."""
+    query = select(ScheduledWorkout).where(
+        ScheduledWorkout.user_id == current_user.id,
+        ScheduledWorkout.status == WorkoutStatus.planned.value,
+        ~exists().where(WorkoutSet.scheduled_workout_id == ScheduledWorkout.id),
+    )
+
+    if data.date_from is not None:
+        query = query.where(ScheduledWorkout.scheduled_date >= data.date_from)
+
+    if data.program_id is not None:
+        query = query.where(ScheduledWorkout.program_id == data.program_id)
+
+    workouts = list((await session.scalars(query)).all())
+
+    if not data.dry_run:
+        for workout in workouts:
+            await session.delete(workout)
+        await session.commit()
+
+    return {"count": len(workouts)}
 
 
 @router.get(

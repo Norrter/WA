@@ -121,7 +121,7 @@ export const exercises = {
 
 export const programs = {
   list: () => request<Program[]>("GET", "/programs"),
-  // Готовые программы, общие для всех
+  // Готовые программы — заготовки только для тренера (назначить клиенту)
   templates: () => request<ProgramDetail[]>("GET", "/programs/templates"),
   copy: (id: number) => request<Program>("POST", `/programs/${id}/copy`),
   get: (id: number) => request<ProgramDetail>("GET", `/programs/${id}`),
@@ -193,6 +193,10 @@ export const workouts = {
     },
   ) => request<ScheduledWorkout>("PATCH", `/scheduled-workouts/${id}`, data),
   remove: (id: number) => request<void>("DELETE", `/scheduled-workouts/${id}`),
+  // «Отменить все»: убрать все запланированные тренировки (выполненные,
+  // пропущенные и начатые остаются). dry_run — только посчитать
+  cancelAll: (data: { dry_run?: boolean } = {}) =>
+    request<{ count: number }>("POST", "/scheduled-workouts/cancel-all", data),
 
   addSet: (
     workoutId: number,

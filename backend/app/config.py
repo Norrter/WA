@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Annotated
 
@@ -68,6 +69,11 @@ class Settings(BaseSettings):
 
     # Сколько часов действует ссылка подтверждения почты
     email_verify_hours: int = Field(48, ge=1)
+
+    # Дневник тренировок и питания закрыт, пока почта не подтверждена, —
+    # для тех, кто зарегистрировался начиная с этого момента.
+    # Аккаунты старше этой даты не трогаем.
+    email_required_since: datetime = datetime(2026, 11, 9, tzinfo=timezone(timedelta(hours=8)))
 
     # Куда присылать новые заявки с главной. Пусто — тренерам (COACH_EMAILS)
     lead_notify_emails: Annotated[list[str], NoDecode] = []

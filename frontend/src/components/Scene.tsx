@@ -132,6 +132,11 @@ function SceneBackdrop({ layers }: { layers: Layer[] }) {
 
     const update = () => {
       frame = 0;
+      // Внутри приложения фон неподвижный — на телефонах так плавнее
+      if (document.body.classList.contains("app-shell")) {
+        root.current?.style.setProperty("--scene-shift", "0px");
+        return;
+      }
       const shift = Math.min(window.scrollY * 0.08, 80);
       root.current?.style.setProperty("--scene-shift", `${-shift}px`);
     };

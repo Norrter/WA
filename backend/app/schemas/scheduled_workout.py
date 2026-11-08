@@ -123,3 +123,19 @@ class ScheduledWorkoutDetailResponse(WorkoutFeedback):
     coach_comment: str | None = None
     coach_comment_at: datetime | None = None
     coach_comment_author: str | None = None
+
+
+
+class CancelPlanRequest(BaseModel):
+    """«Отменить все»: убрать запланированные тренировки. Без дат — все,
+    включая прошедшие неотмеченные. Выполненные, пропущенные и начатые
+    (с подходами) остаются в истории."""
+
+    date_from: date | None = None
+    program_id: int | None = None
+    # только посчитать, ничего не удаляя
+    dry_run: bool = False
+
+
+class PlanChangeResponse(BaseModel):
+    count: int

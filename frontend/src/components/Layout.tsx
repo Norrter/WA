@@ -183,7 +183,10 @@ export function Layout({ route, children }: { route: Route; children: ReactNode 
       </header>
 
       <main className="content">
-        {user && !user.email_verified && <VerifyEmailBanner email={user.email} />}
+        {/* При закрытом приложении карточка на каждом экране — плашка только в профиле */}
+        {user && !user.email_verified && (!user.diary_locked || route.name === "profile") && (
+          <VerifyEmailBanner email={user.email} locked={user.diary_locked} />
+        )}
         {children}
       </main>
 

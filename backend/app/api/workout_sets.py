@@ -3,7 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.helpers import apply_changes, get_owned_workout
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, require_open_diary
 from app.core.load import compute_load, uses_body_weight
 from app.database.session import get_session
 from app.models.exercise import Exercise
@@ -25,6 +25,8 @@ from app.schemas.workout_set import (
 router = APIRouter(
     prefix="/scheduled-workouts/{scheduled_workout_id}/sets",
     tags=["Workout Sets"],
+    # с неподтверждённой почтой — только просмотр
+    dependencies=[Depends(require_open_diary)],
 )
 
 

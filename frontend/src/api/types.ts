@@ -14,6 +14,8 @@ export interface User {
   is_admin: boolean;
   // почта подтверждена по ссылке из письма
   email_verified: boolean;
+  // тренировки и питание закрыты, пока почта не подтверждена
+  diary_locked: boolean;
   // вес тела, кг — для подтягиваний, брусьев, гравитрона
   body_weight: number | null;
   created_at: string;

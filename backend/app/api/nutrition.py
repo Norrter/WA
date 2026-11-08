@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, require_open_diary
 from app.database.session import get_session
 from app.models.nutrition import Food, FoodEntry, NutritionProfile
 from app.models.user import User
@@ -26,7 +26,12 @@ from app.schemas.nutrition import (
 from app.services.nutrition import age_from_birth_year, calculate
 
 
-router = APIRouter(prefix="/nutrition", tags=["Nutrition"])
+router = APIRouter(
+    prefix="/nutrition",
+    tags=["Nutrition"],
+    # с неподтверждённой почтой — только просмотр
+    dependencies=[Depends(require_open_diary)],
+)
 
 
 def need_weight(user: User, weight: float | None) -> float:

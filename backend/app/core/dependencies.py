@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -60,3 +60,37 @@ async def get_current_admin(
         )
 
     return current_user
+
+
+# Запросы, которые ничего не записывают: их пропускаем и с закрытым дневником
+READ_METHODS = {"GET", "HEAD", "OPTIONS"}
+
+
+optional_security = HTTPBearer(auto_error=False)
+
+
+async def require_open_diary(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials | None = Depends(optional_security),
+    session: AsyncSession = Depends(get_session),
+) -> None:
+    """Пока почта не подтверждена (у новых аккаунтов), менять ничего нельзя:
+    ни тренировки, ни питание, ни программы. Смотреть (GET) — можно."""
+    if request.method in READ_METHODS:
+        return
+
+    # Расчёт нормы КБЖУ ничего не сохраняет
+    if request.url.path.endswith("/nutrition/calculate"):
+        return
+
+    # Без токена ответит сама ручка (401)
+    if credentials is None:
+        return
+
+    current_user = await get_current_user(credentials, session)
+
+    if current_user.diary_locked:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Confirm your email to use the diary",
+        )

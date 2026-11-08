@@ -126,3 +126,47 @@ async def test_coach_opens_and_comments_workout(client, coach, coach2, alice, bo
     # Сам клиент комментарий тренера поставить не может
     response = await client.put(url + "/comment", json={"text": "Сам себе"}, headers=alice)
     assert response.status_code == 403
+
+
+
+async def test_client_gets_email_about_coach_comment(client, coach, alice, monkeypatch):
+    from datetime import datetime, timezone
+
+    from sqlalchemy import update
+
+    from app.database.session import AsyncSessionLocal
+    from app.models.user import User
+
+    letters = []
+
+    async def fake_send(to, subject, text, html=None):
+        letters.append({"to": to, "subject": subject, "text": text})
+        return True
+
+    monkeypatch.setattr("app.services.emails.send_email", fake_send)
+
+    alice_id = await make_client(client, coach, alice)
+    data = await finished_workout(client, alice, days_ago(1))
+    url = f"/coach/clients/{alice_id}/workouts/{data['workout']['id']}/comment"
+    letters.clear()  # письма о регистрации не считаем
+
+    # почта клиента не подтверждена — письма нет
+    await client.put(url, json={"text": "Первый"}, headers=coach)
+    assert letters == []
+
+    async with AsyncSessionLocal() as session:
+        await session.execute(
+            update(User).where(User.id == alice_id).values(email_verified_at=datetime.now(timezone.utc))
+        )
+        await session.commit()
+
+    await client.put(url, json={"text": "Отлично, +2,5 кг"}, headers=coach)
+    assert len(letters) == 1
+    assert letters[0]["to"] == "alice@example.com"
+    assert "Отлично, +2,5 кг" in letters[0]["text"]
+    assert f"#/workouts/{data['workout']['id']}" in letters[0]["text"]
+
+    # тот же текст ещё раз и удаление — новых писем нет
+    await client.put(url, json={"text": "Отлично, +2,5 кг"}, headers=coach)
+    await client.put(url, json={"text": ""}, headers=coach)
+    assert len(letters) == 1

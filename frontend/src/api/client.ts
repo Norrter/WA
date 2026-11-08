@@ -64,6 +64,8 @@ const DETAIL_RU: Record<string, string> = {
   "Verification link is invalid or expired":
     "Ссылка недействительна или устарела — отправьте письмо ещё раз из приложения",
   "Email already verified": "Почта уже подтверждена",
+  "Confirm your email to use the diary":
+    "Подтвердите почту, чтобы записывать тренировки и питание — ссылка в письме",
   "Please wait a minute before requesting another email": "Письмо только что отправлено — подождите минуту",
   "Too many requests, try again later": "Слишком много заявок подряд — попробуйте через 10 минут",
   "Exercise has logged sets and cannot be deleted":

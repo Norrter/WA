@@ -81,6 +81,14 @@ class User(Base):
         return self.email_verified_at is not None
 
     @property
+    def diary_locked(self) -> bool:
+        """Дневник закрыт: почта не подтверждена, а аккаунт новый
+        (создан после EMAIL_REQUIRED_SINCE)."""
+        if self.email_verified_at is not None or self.created_at is None:
+            return False
+        return self.created_at >= settings.email_required_since
+
+    @property
     def is_admin(self) -> bool:
         """Администратор задаётся списком ADMIN_EMAILS."""
         return self.email.strip().lower() in settings.admin_emails

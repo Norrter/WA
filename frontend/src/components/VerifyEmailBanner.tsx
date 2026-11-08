@@ -6,7 +6,7 @@ import { auth } from "../api";
 import { Icon } from "./Icon";
 import { useToast } from "./Toast";
 
-export function VerifyEmailBanner({ email }: { email: string }) {
+export function VerifyEmailBanner({ email, locked = false }: { email: string; locked?: boolean }) {
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
@@ -33,6 +33,7 @@ export function VerifyEmailBanner({ email }: { email: string }) {
       <p className="verify-banner-text">
         <strong>Подтвердите почту</strong>
         <span>
+          {locked && "Пока почта не подтверждена, приложение закрыто — открыт только профиль. "}
           Мы отправили ссылку на {email}. Если письма нет — проверьте «Спам».
         </span>
       </p>

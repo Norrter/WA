@@ -89,3 +89,68 @@ async def test_new_lead_notifies_coach(client, sent, monkeypatch):
 
     assert sent[-1]["to"] == "coach@example.com"
     assert "@ivan" in sent[-1]["text"]
+
+
+
+# ----- Дневник закрыт до подтверждения почты -----
+
+@pytest.fixture
+def lock_on(monkeypatch):
+    from datetime import datetime, timezone
+    monkeypatch.setattr(
+        "app.config.settings.email_required_since",
+        datetime(2000, 1, 1, tzinfo=timezone.utc),
+    )
+
+
+async def test_new_unverified_user_cannot_write_diary(client, sent, lock_on):
+    headers = await register_and_login(client, "alice")
+    me = (await client.get("/auth/me", headers=headers)).json()
+    assert me["diary_locked"] is True
+
+    # смотреть можно
+    response = await client.get("/scheduled-workouts", headers=headers)
+    assert response.status_code == 200
+
+    # записывать — нет
+    response = await client.post(
+        "/scheduled-workouts", headers=headers, json={"scheduled_date": "2026-11-10"}
+    )
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Confirm your email to use the diary"
+
+    response = await client.post(
+        "/nutrition/entries", headers=headers, json={"date": "2026-11-10", "name": "Овсянка"}
+    )
+    assert response.status_code == 403
+
+
+async def test_diary_opens_after_verification(client, sent, lock_on):
+    headers = await register_and_login(client, "alice")
+
+    token = sent[0]["text"].split("#/verify-email/")[1].split()[0]
+    assert (await client.post("/auth/verify-email", json={"token": token})).status_code == 200
+
+    me = (await client.get("/auth/me", headers=headers)).json()
+    assert me["diary_locked"] is False
+
+    response = await client.post("/nutrition/entries", headers=headers, json={"date": "2026-11-10"})
+    assert response.status_code != 403
+
+
+async def test_old_accounts_are_not_locked(client, sent):
+    # в conftest дата замка — в далёком будущем: все аккаунты «старые»
+    headers = await register_and_login(client, "alice")
+    me = (await client.get("/auth/me", headers=headers)).json()
+    assert me["email_verified"] is False
+    assert me["diary_locked"] is False
+
+
+async def test_locked_user_cannot_create_program(client, sent, lock_on):
+    headers = await register_and_login(client, "alice")
+
+    response = await client.get("/programs", headers=headers)
+    assert response.status_code == 200
+
+    response = await client.post("/programs", headers=headers, json={"name": "Моя программа"})
+    assert response.status_code == 403
