@@ -154,3 +154,37 @@ async def test_locked_user_cannot_create_program(client, sent, lock_on):
 
     response = await client.post("/programs", headers=headers, json={"name": "Моя программа"})
     assert response.status_code == 403
+
+
+
+# ----- Отправка через Resend -----
+
+async def test_resend_is_used_when_key_is_set(monkeypatch):
+    from app.core import mailer
+
+    monkeypatch.setattr("app.config.settings.resend_api_key", "re_test")
+    monkeypatch.setattr("app.config.settings.mail_from", "noreply@greeksgym.ru")
+
+    calls = []
+    monkeypatch.setattr(mailer, "_send_resend", lambda payload: calls.append(payload))
+
+    assert mailer.mail_provider() == "resend"
+    assert await mailer.send_email("user@example.com", "Тема", "Текст", "<p>Текст</p>") is True
+
+    [payload] = calls
+    assert payload["to"] == ["user@example.com"]
+    assert payload["from"].endswith("<noreply@greeksgym.ru>")
+    assert payload["subject"] == "Тема"
+    assert payload["html"] == "<p>Текст</p>"
+
+
+async def test_mail_failure_does_not_raise(monkeypatch):
+    from app.core import mailer
+
+    monkeypatch.setattr("app.config.settings.resend_api_key", "re_test")
+
+    def boom(payload):
+        raise RuntimeError("Resend ответил 403")
+
+    monkeypatch.setattr(mailer, "_send_resend", boom)
+    assert await mailer.send_email("user@example.com", "Тема", "Текст") is False
