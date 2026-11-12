@@ -4,6 +4,7 @@
 Заявки видят и обрабатывают тренер и администратор.
 """
 
+import datetime as dt
 import time
 from collections import defaultdict, deque
 
@@ -105,7 +106,15 @@ async def create_lead(
         if offer is None or not offer.is_active:
             raise HTTPException(status_code=404, detail="Offer not found")
 
+    # Без согласия на обработку персональных данных заявку не принимаем
+    if not data.consent:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Consent is required",
+        )
+
     lead = Lead(
+        pd_consent_at=dt.datetime.now(dt.timezone.utc),
         offer_id=offer.id if offer else None,
         offer_title=offer.title if offer else None,
         name=data.name,

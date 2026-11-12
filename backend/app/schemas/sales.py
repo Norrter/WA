@@ -27,6 +27,8 @@ class LeadInput(BaseModel):
     goal: Annotated[str, StringConstraints(strip_whitespace=True, max_length=2000)] | None = None
     # ловушка для ботов: поле скрыто, человек его не заполняет
     website: str | None = Field(None, max_length=200)
+    # галочка согласия на обработку персональных данных (152-ФЗ)
+    consent: bool = False
 
 
 class LeadCreated(BaseModel):

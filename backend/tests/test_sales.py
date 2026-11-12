@@ -42,12 +42,12 @@ async def test_lead_flow(client, admin, coach, alice):
 
     response = await client.post(
         "/public/leads",
-        json={"offer_id": offer["id"], "name": " Иван ", "contact": "@ivan", "goal": "Похудеть"},
+        json={"consent": True, "offer_id": offer["id"], "name": " Иван ", "contact": "@ivan", "goal": "Похудеть"},
     )
     assert response.status_code == 201, response.text
 
     # Без тарифа — просто вопрос
-    response = await client.post("/public/leads", json={"name": "Оля", "contact": "+7 900 000-00-00"})
+    response = await client.post("/public/leads", json={"consent": True, "name": "Оля", "contact": "+7 900 000-00-00"})
     assert response.status_code == 201
 
     # Скрытый или несуществующий тариф
@@ -58,12 +58,12 @@ async def test_lead_flow(client, admin, coach, alice):
         assert response.status_code == 404
 
     # Проверки полей
-    response = await client.post("/public/leads", json={"name": "", "contact": "@x"})
+    response = await client.post("/public/leads", json={"consent": True, "name": "", "contact": "@x"})
     assert response.status_code == 422
 
     # Бот заполнил скрытое поле — заявка не сохраняется
     response = await client.post(
-        "/public/leads", json={"name": "Bot", "contact": "spam@x.ru", "website": "http://spam"}
+        "/public/leads", json={"consent": True, "name": "Bot", "contact": "spam@x.ru", "website": "http://spam"}
     )
     assert response.status_code == 201
 
@@ -105,16 +105,23 @@ async def test_lead_flow(client, admin, coach, alice):
 
 async def test_lead_rate_limit(client):
     for _ in range(sales.LEADS_PER_WINDOW):
-        response = await client.post("/public/leads", json={"name": "Иван", "contact": "@ivan"})
+        response = await client.post("/public/leads", json={"consent": True, "name": "Иван", "contact": "@ivan"})
         assert response.status_code == 201
 
-    response = await client.post("/public/leads", json={"name": "Иван", "contact": "@ivan"})
+    response = await client.post("/public/leads", json={"consent": True, "name": "Иван", "contact": "@ivan"})
     assert response.status_code == 429
 
     # С другого адреса — можно
     response = await client.post(
         "/public/leads",
-        json={"name": "Оля", "contact": "@olya"},
+        json={"consent": True, "name": "Оля", "contact": "@olya"},
         headers={"X-Forwarded-For": "10.0.0.7"},
     )
     assert response.status_code == 201
+
+
+
+async def test_lead_requires_consent(client):
+    response = await client.post("/public/leads", json={"name": "Иван", "contact": "@ivan"})
+    assert response.status_code == 422
+    assert response.json()["detail"] == "Consent is required"

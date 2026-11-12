@@ -21,6 +21,8 @@ class UserCreate(BaseModel):
     email: EmailStr
     username: Username
     password: Password
+    # галочка «Даю согласие на обработку персональных данных» (152-ФЗ)
+    consent: bool = False
 
 
 class UserPatch(PatchModel):

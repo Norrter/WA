@@ -75,6 +75,8 @@ class Lead(Base):
     status: Mapped[str] = mapped_column(String(20), default="new", server_default="new", index=True)
     # заметка тренера по заявке
     note: Mapped[str | None] = mapped_column(Text)
+    # когда посетитель дал согласие на обработку персональных данных (152-ФЗ)
+    pd_consent_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[dt.datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), index=True
     )

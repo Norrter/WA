@@ -83,7 +83,7 @@ async def test_new_lead_notifies_coach(client, sent, monkeypatch):
 
     response = await client.post(
         "/public/leads",
-        json={"name": "Иван", "contact": "@ivan", "goal": "сбросить 5 кг"},
+        json={"consent": True, "name": "Иван", "contact": "@ivan", "goal": "сбросить 5 кг"},
     )
     assert response.status_code == 201
 
@@ -152,7 +152,7 @@ async def test_locked_user_cannot_create_program(client, sent, lock_on):
     response = await client.get("/programs", headers=headers)
     assert response.status_code == 200
 
-    response = await client.post("/programs", headers=headers, json={"name": "Моя программа"})
+    response = await client.post("/programs", headers=headers, json={"consent": True, "name": "Моя программа"})
     assert response.status_code == 403
 
 

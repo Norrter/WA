@@ -211,8 +211,23 @@ async def get_scheduled_workouts(
         .limit(pagination.limit)
         .offset(pagination.offset)
     )
+    workouts = list(result.scalars().all())
 
-    return result.scalars().all()
+    # Сколько подходов записано в каждой — чтобы показать «Продолжить»
+    if workouts:
+        counts = dict(
+            (
+                await session.execute(
+                    select(WorkoutSet.scheduled_workout_id, func.count())
+                    .where(WorkoutSet.scheduled_workout_id.in_([w.id for w in workouts]))
+                    .group_by(WorkoutSet.scheduled_workout_id)
+                )
+            ).all()
+        )
+        for workout in workouts:
+            workout.sets_logged = counts.get(workout.id, 0)
+
+    return workouts
 
 
 @router.get(

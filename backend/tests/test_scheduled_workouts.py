@@ -27,6 +27,7 @@ async def test_scheduled_workout_crud(client, alice):
         "difficulty": None,
         "feedback_comment": None,
         "feedback_at": None,
+        "sets_logged": 0,
     }
     url = f"/scheduled-workouts/{workout['id']}"
 
@@ -373,3 +374,18 @@ async def test_cancel_all_keeps_history(client, alice, bob):
     left = {w["id"] for w in (await client.get("/scheduled-workouts", headers=alice)).json()}
     assert left == {done["id"], skipped["id"], data["workout"]["id"]}
     assert unmarked["id"] not in left and future["id"] not in left
+
+
+
+async def test_list_shows_logged_sets(client, alice):
+    data = await build_workout(client, alice, "2026-11-12")
+    workout_id = data["workout"]["id"]
+
+    listed = (await client.get("/scheduled-workouts", headers=alice)).json()
+    assert listed[0]["sets_logged"] == 0
+
+    await create_set(client, alice, workout_id, data["program_exercise"]["id"])
+    await create_set(client, alice, workout_id, data["program_exercise"]["id"], set_number=2)
+
+    listed = (await client.get("/scheduled-workouts", headers=alice)).json()
+    assert listed[0]["sets_logged"] == 2

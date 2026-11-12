@@ -237,3 +237,24 @@ async def test_openapi_schema_is_generated(client):
     paths = response.json()["paths"]
     assert "/scheduled-workouts/{scheduled_workout_id}/full" in paths
     assert "/exercises/{exercise_id}/history" in paths
+
+
+
+async def test_registration_requires_consent(client):
+    response = await client.post(
+        "/users",
+        json={"email": "new@example.com", "username": "newbie", "password": "correct-horse-battery"},
+    )
+    assert response.status_code == 422
+    assert response.json()["detail"] == "Consent is required"
+
+    response = await client.post(
+        "/users",
+        json={
+            "email": "new@example.com",
+            "username": "newbie",
+            "password": "correct-horse-battery",
+            "consent": True,
+        },
+    )
+    assert response.status_code == 201

@@ -10,6 +10,7 @@ async def register(client, name: str, password: str = PASSWORD):
             "email": f"{name}@example.com",
             "username": name,
             "password": password,
+            "consent": True,
         },
     )
 

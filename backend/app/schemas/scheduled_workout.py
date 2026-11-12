@@ -62,6 +62,9 @@ class ScheduledWorkoutResponse(WorkoutFeedback):
     day_name: str | None = None
     scheduled_date: date
     status: WorkoutStatus
+    # сколько подходов уже записано: если есть — тренировка начата
+    # («Продолжить тренировку»). Заполняется в списке тренировок
+    sets_logged: int = 0
 
 
 class GenerateScheduleRequest(BaseModel):

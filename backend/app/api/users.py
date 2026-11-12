@@ -105,11 +105,19 @@ async def create_user(
         data.username,
     )
 
+    # Без согласия на обработку персональных данных аккаунт не создаём
+    if not data.consent:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Consent is required",
+        )
+
     user = User(
         email=data.email,
         username=data.username,
         password_hash=hash_password(data.password),
         role=role_for_email(data.email),
+        pd_consent_at=datetime.now(timezone.utc),
     )
 
     session.add(user)

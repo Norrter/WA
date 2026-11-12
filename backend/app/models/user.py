@@ -57,6 +57,13 @@ class User(Base):
     # Вес тела, кг: нужен для подтягиваний, брусьев и гравитрона
     body_weight: Mapped[float | None] = mapped_column(Float, nullable=True)
 
+    # Когда человек дал согласие на обработку персональных данных
+    # (галочка при регистрации) — подтверждение для 152-ФЗ
+    pd_consent_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
     # Когда человек подтвердил почту по ссылке из письма; None — ещё нет
     email_verified_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
